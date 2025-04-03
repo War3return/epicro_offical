@@ -25,10 +25,12 @@
 using CaptureSampleCore;
 using Composition.WindowsRuntimeHelpers;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -36,6 +38,7 @@ using System.Windows.Interop;
 using Windows.Foundation.Metadata;
 using Windows.Graphics.Capture;
 using Windows.UI.Composition;
+using WPFCaptureSample.Utilites;
 
 namespace WPFCaptureSample
 {
@@ -50,8 +53,30 @@ namespace WPFCaptureSample
         private ContainerVisual root;
 
         private BasicSampleApplication sample;
-        private ObservableCollection<Process> processes;
-        private ObservableCollection<MonitorInfo> monitors;
+        private ObservableCollection<WindowInfo> processes;
+
+        private BasicCapture backgroundCapture;
+        public static WindowInfo TargetWindow { get; private set; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT
+        {
+            public int left;
+            public int top;
+            public int right;
+            public int bottom;
+        }
+
+        [DllImport("user32.dll")]
+        static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
+
+        [DllImport("user32.dll")]
+        static extern bool AdjustWindowRect(ref RECT lpRect, uint dwStyle, bool bMenu);
+
+        [DllImport("user32.dll")]
+        static extern uint GetWindowLong(IntPtr hWnd, int nIndex);
+
+        const int GWL_STYLE = -16;
 
         public MainWindow()
         {
@@ -63,22 +88,17 @@ namespace WPFCaptureSample
 #endif
         }
 
-        private async void PickerButton_Click(object sender, RoutedEventArgs e)
-        {
-            StopCapture();
-            WindowComboBox.SelectedIndex = -1;
-            await StartPickerCaptureAsync();
-        }
-
-        private void PrimaryMonitorButton_Click(object sender, RoutedEventArgs e)
-        {
-            StopCapture();
-            WindowComboBox.SelectedIndex = -1;
-            StartPrimaryMonitorCapture();
-        }
-
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            string hero = Properties.Settings.Default.HeroNum;
+            string bag = Properties.Settings.Default.BagNum;
+            string beltNum = Properties.Settings.Default.BeltNum;
+            string beltSpeed = Properties.Settings.Default.BeltSpeed;
+
+            Debug.WriteLine($"불러온 설정값 - 영웅: {hero}, 창고: {bag}, 벨트번호: {beltNum}, 속도: {beltSpeed}");
+
+            LoadRoiAreas();
+            /*
             var interopWindow = new WindowInteropHelper(this);
             hwnd = interopWindow.Handle;
 
@@ -94,55 +114,46 @@ namespace WPFCaptureSample
 
             InitComposition(controlsWidth);
             InitWindowList();
-            InitMonitorList();
+            */
+            // 기존 실시간 송출 제거 → 대신 BackgroundCapture만 시작
         }
 
         private void StopButton_Click(object sender, RoutedEventArgs e)
         {
-            StopCapture();
+            //StopCapture();
             WindowComboBox.SelectedIndex = -1;
+        }
+
+        private void WindowComboBox_DropDownOpened(object sender, EventArgs e)
+        {
+            InitWindowList();
         }
 
         private void WindowComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var comboBox = (ComboBox)sender;
-            var process = (Process)comboBox.SelectedItem;
+            var process = (WindowInfo)comboBox.SelectedItem;
 
             if (process != null)
             {
-                StopCapture();
-                var hwnd = process.MainWindowHandle;
+                TargetWindow = process;
+                //StopCapture();
+                var hwnd = process.Handle;
                 try
                 {
-                    StartHwndCapture(hwnd);
+                    // 백그라운드 캡처 시작
+                    var d3dDevice = Direct3D11Helper.CreateDevice();
+                    var item = CaptureHelper.CreateItemForWindow(TargetWindow.Handle);
+                    backgroundCapture = new BasicCapture(d3dDevice, item);
+                    backgroundCapture.StartCapture();
+
+                    Debug.WriteLine("백그라운드 캡처 시작됨");
+                    //StartHwndCapture(hwnd);
                 }
                 catch (Exception)
                 {
                     Debug.WriteLine($"Hwnd 0x{hwnd.ToInt32():X8} is not valid for capture!");
                     processes.Remove(process);
-                    comboBox.SelectedIndex = -1;
-                }
-            }
-        }
-
-        private void MonitorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            var comboBox = (ComboBox)sender;
-            var monitor = (MonitorInfo)comboBox.SelectedItem;
-
-            if (monitor != null)
-            {
-                StopCapture();
-                WindowComboBox.SelectedIndex = -1;
-                var hmon = monitor.Hmon;
-                try
-                {
-                    StartHmonCapture(hmon);
-                }
-                catch (Exception)
-                {
-                    Debug.WriteLine($"Hmon 0x{hmon.ToInt32():X8} is not valid for capture!");
-                    monitors.Remove(monitor);
                     comboBox.SelectedIndex = -1;
                 }
             }
@@ -168,15 +179,50 @@ namespace WPFCaptureSample
             root.Children.InsertAtTop(sample.Visual);
         }
 
+        private List<Int32Rect> LoadRoiAreas()
+        {
+            var list = new List<Int32Rect>();
+
+            string[] keys = { "Roi_Q", "Roi_W", "Roi_E", "Roi_R", "Roi_A" };
+            foreach (var key in keys)
+            {
+                string value = Properties.Settings.Default[key] as string;
+                if (!string.IsNullOrEmpty(value))
+                {
+                    var parts = value.Split(',');
+                    var rect = new Int32Rect(
+                        int.Parse(parts[0]),
+                        int.Parse(parts[1]),
+                        int.Parse(parts[2]),
+                        int.Parse(parts[3]));
+                    list.Add(rect);
+                }
+            }
+            return list;
+        }
+        private string GetRoiImagePath(int index)
+        {
+            string[] roiNames = { "Q", "W", "E", "R", "A" };
+            return System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                $"ROI_{roiNames[index]}.png");
+        }
+
 
         private void InitWindowList()
         {
             if (ApiInformation.IsApiContractPresent(typeof(Windows.Foundation.UniversalApiContract).FullName, 8))
             {
                 var processesWithWindows = from p in Process.GetProcesses()
-                                           where !string.IsNullOrWhiteSpace(p.MainWindowTitle) && WindowEnumerationHelper.IsWindowValidForCapture(p.MainWindowHandle)
-                                           select p;
-                processes = new ObservableCollection<Process>(processesWithWindows);
+                                           where !string.IsNullOrWhiteSpace(p.MainWindowTitle)
+                                           && WindowEnumerationHelper.IsWindowValidForCapture(p.MainWindowHandle)
+                                           select new WindowInfo
+                                           {
+                                               Handle = p.MainWindowHandle,
+                                               ProcessId = p.Id,
+                                               Title = p.MainWindowTitle
+                                           };
+                processes = new ObservableCollection<WindowInfo>(processesWithWindows);
                 WindowComboBox.ItemsSource = processes;
             }
             else
@@ -185,58 +231,62 @@ namespace WPFCaptureSample
             }
         }
 
-        private void InitMonitorList()
-        {
-            if (ApiInformation.IsApiContractPresent(typeof(Windows.Foundation.UniversalApiContract).FullName, 8))
-            {
-                monitors = new ObservableCollection<MonitorInfo>(MonitorEnumerationHelper.GetMonitors());
-            }
-            else
-            {
-            }
-        }
-
-        private async Task StartPickerCaptureAsync()
-        {
-            var picker = new GraphicsCapturePicker();
-            picker.SetWindow(hwnd);
-            GraphicsCaptureItem item = await picker.PickSingleItemAsync();
-
-            if (item != null)
-            {
-                sample.StartCaptureFromItem(item);
-            }
-        }
-
         private void StartHwndCapture(IntPtr hwnd)
         {
             GraphicsCaptureItem item = CaptureHelper.CreateItemForWindow(hwnd);
             if (item != null)
             {
-                sample.StartCaptureFromItem(item);
+                //sample.StartCaptureFromItem(item);
             }
-        }
-
-        private void StartHmonCapture(IntPtr hmon)
-        {
-            GraphicsCaptureItem item = CaptureHelper.CreateItemForMonitor(hmon);
-            if (item != null)
-            {
-                sample.StartCaptureFromItem(item);
-            }
-        }
-
-        private void StartPrimaryMonitorCapture()
-        {
-            MonitorInfo monitor = (from m in MonitorEnumerationHelper.GetMonitors()
-                           where m.IsPrimary
-                           select m).First();
-            StartHmonCapture(monitor.Hmon);
         }
 
         private void StopCapture()
         {
-            sample.StopCapture();
+            //sample.StopCapture();
+        }
+
+        private async void RoiButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (TargetWindow == null)
+            {
+                MessageBox.Show("먼저 캡처할 창을 선택하세요.");
+                return;
+            }
+
+            var bitmap = await SoftwareBitmapCopy.CaptureSingleFrameAsync(TargetWindow.Handle);
+
+            if (bitmap != null)
+            {
+                GetClientRect(TargetWindow.Handle, out RECT rect);
+                var style = GetWindowLong(TargetWindow.Handle, GWL_STYLE);
+                AdjustWindowRect(ref rect, style, false);
+
+                var clientWidth = rect.right - rect.left;
+                var clientHeight = rect.bottom - rect.top;
+
+                var roiWindow = new ROIWindow(bitmap, new[] { "Q", "W", "E", "R", "A" }, "Roi")
+                {
+                    Width = clientWidth,
+                    Height = clientHeight
+                };
+
+                if (roiWindow.ShowDialog() == true)
+                {
+
+                    // 이후 ROI 정보를 저장하거나 비교용으로 사용하면 됩니다.
+                }
+            }
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void btn_BossSetting_Click(object sender, RoutedEventArgs e)
+        {
+            var bossSetting = new BossSetting();
+            bossSetting.ShowDialog();
         }
     }
 }

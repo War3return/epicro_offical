@@ -24,7 +24,13 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
+using Windows.Graphics.Capture;
+using Windows.Graphics.DirectX;
 using Windows.Graphics.DirectX.Direct3D11;
+using Windows.Graphics.Imaging;
+using Windows.UI.Xaml.Media.Imaging;
 
 namespace Composition.WindowsRuntimeHelpers
 {
@@ -134,5 +140,48 @@ namespace Composition.WindowsRuntimeHelpers
             var d3dSurface = new SharpDX.Direct3D11.Texture2D(d3dPointer);
             return d3dSurface;
         }
+       
+
+        public static SoftwareBitmap CopyToSoftwareBitmap(SharpDX.Direct3D11.Texture2D texture)
+        {
+            var device = texture.Device;
+            var desc = texture.Description;
+
+            using (var staging = new SharpDX.Direct3D11.Texture2D(device, new SharpDX.Direct3D11.Texture2DDescription
+            {
+                CpuAccessFlags = SharpDX.Direct3D11.CpuAccessFlags.Read,
+                BindFlags = SharpDX.Direct3D11.BindFlags.None,
+                Format = desc.Format,
+                Width = desc.Width,
+                Height = desc.Height,
+                OptionFlags = SharpDX.Direct3D11.ResourceOptionFlags.None,
+                MipLevels = 1,
+                ArraySize = 1,
+                SampleDescription = new SharpDX.DXGI.SampleDescription(1, 0),
+                Usage = SharpDX.Direct3D11.ResourceUsage.Staging
+            }))
+            {
+                device.ImmediateContext.CopyResource(texture, staging);
+                var dataBox = device.ImmediateContext.MapSubresource(staging, 0, SharpDX.Direct3D11.MapMode.Read, SharpDX.Direct3D11.MapFlags.None);
+
+                var bitmap = new SoftwareBitmap(BitmapPixelFormat.Bgra8, desc.Width, desc.Height, BitmapAlphaMode.Premultiplied);
+
+                // Buffer로 변환
+                var length = desc.Width * desc.Height * 4;
+                byte[] buffer = new byte[length];
+                Marshal.Copy(dataBox.DataPointer, buffer, 0, length);
+
+                // IBuffer로 변환
+                var ibuffer = WindowsRuntimeBufferExtensions.AsBuffer(buffer, 0, length);
+
+                // 데이터 복사
+                bitmap.CopyFromBuffer(ibuffer);
+
+                device.ImmediateContext.UnmapSubresource(staging, 0);
+                return bitmap;
+            }
+        }
+
+
     }
 }

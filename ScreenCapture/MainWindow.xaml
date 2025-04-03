@@ -33,33 +33,80 @@
         Loaded="Window_Loaded">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="194" />
-            <ColumnDefinition Width="46*" />
-            <ColumnDefinition Width="55*"/>
+            <ColumnDefinition Width="265" />
+            <ColumnDefinition Width="41*" />
+            <ColumnDefinition Width="66*"/>
         </Grid.ColumnDefinitions>
 
-        <Grid Grid.Column="0">
+        <Grid HorizontalAlignment="Center" Width="264">
             <Grid.RowDefinitions>
                 <RowDefinition />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <StackPanel Margin="10">
-                <ComboBox x:Name="WindowComboBox" Margin="10" SelectionChanged="WindowComboBox_SelectionChanged">
+            <StackPanel Margin="10,10,10,10">
+                <ComboBox x:Name="WindowComboBox" Margin="10" SelectionChanged="WindowComboBox_SelectionChanged" DropDownOpened="WindowComboBox_DropDownOpened">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding MainWindowTitle}" />
+                            <TextBlock Text="{Binding Title}" />
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
+                <TabControl Width="240" Height="180">
+                    <TabItem Header="벨트">
+                        <Grid Background="#FFE5E5E5" Height="150">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="btnBeltStart" Content="시작" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="64" Height="25"/>
+                            <Button x:Name="btnBeltStop" Content="중지" Margin="0,10,0,0" VerticalAlignment="Top" Height="25" HorizontalAlignment="Center" Width="64"/>
+                            <Button x:Name="btnBeltSet" Content="설정" Margin="0,10,10,0" VerticalAlignment="Top" Height="25" HorizontalAlignment="Right" Width="64"/>
+                            <GroupBox Header="온오프" Margin="10,40,129,0" IsEnabled="True" Height="98" VerticalAlignment="Top">
+                                <StackPanel>
+                                    <CheckBox Content="세이브" Margin="5" IsChecked="False" IsEnabled="True"/>
+                                    <CheckBox Content="범줍" Margin="5" IsChecked="False" IsEnabled="True"/>
+                                    <CheckBox Content="영웅선택" Margin="5" IsChecked="False" IsEnabled="True"/>
+                                </StackPanel>
+                            </GroupBox>
+                        </Grid>
+                    </TabItem>
+                    <TabItem Header="보스" Margin="2,-2,-2,0">
+                        <Grid Background="#FFE5E5E5" Height="150">
+                            <Button Content="시작" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="64" Height="25"/>
+                            <Button Content="중지" HorizontalAlignment="Center" Margin="0,10,0,0" VerticalAlignment="Top" Width="64" Height="25"/>
+                            <Button x:Name="btn_BossSetting" Content="설정" HorizontalAlignment="Left" Margin="161,10,0,0" VerticalAlignment="Top" Width="64" Height="25" Click="btn_BossSetting_Click" />
+                            <GroupBox Header="인식방법" Margin="118,41,10,0" Height="48" VerticalAlignment="Top">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="81*"/>
+                                        <ColumnDefinition Width="82*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <RadioButton Content="골드" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                    <RadioButton Content="목재" HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Column="1" Margin="5,0,0,0"/>
+                                </Grid>
+                            </GroupBox>
+                            <GroupBox Header="보스존" Margin="2,40,117,0" Height="49" VerticalAlignment="Top">
+                                <ComboBox Margin="0,0,-2,0" Height="24">
+                                    <ComboBoxItem Content="옵션 1" />
+                                    <ComboBoxItem Content="옵션 2" />
+                                    <ComboBoxItem Content="옵션 3" />
+                                </ComboBox>
+                            </GroupBox>
+                            <GroupBox Header="소환순서" Margin="2,89,117,0" Height="49" VerticalAlignment="Top">
+                                <TextBox HorizontalAlignment="Left" TextWrapping="Wrap" Width="106"/>
+                            </GroupBox>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+                <Button x:Name="RoiButton" Content="테스트" Click="RoiButton_Click"/>
             </StackPanel>
-            <Button x:Name="StopButton" Grid.Row="1" Content="Stop Capturing" Click="StopButton_Click" Margin="10" />
+            <Button x:Name="StopButton" Grid.Row="1" Content="Stop Capturing" Click="StopButton_Click" Margin="10,10,10,10" />
         </Grid>
 
-        <Grid x:Name="ControlsGrid" Grid.Column="1">
-            
-        </Grid>
-
-        <Grid Grid.Column="1" Grid.ColumnSpan="2">
+        <Grid x:Name="ControlsGrid" Margin="264,0,0,0" Grid.ColumnSpan="2">
+            <TextBox x:Name="txt_log" HorizontalAlignment="Center" Height="115" Margin="0,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="206" IsReadOnly="True"/>
         </Grid>
     </Grid>
 </Window>

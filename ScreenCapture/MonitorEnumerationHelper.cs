@@ -76,7 +76,7 @@ namespace WPFCaptureSample
             var result = new List<MonitorInfo>();
 
             EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero,
-                delegate (IntPtr hMonitor, IntPtr hdcMonitor, ref RECT lprcMonitor, IntPtr dwData)
+                delegate(IntPtr hMonitor, IntPtr hdcMonitor, ref RECT lprcMonitor, IntPtr dwData)
                 {
                     MonitorInfoEx mi = new MonitorInfoEx();
                     mi.Size = Marshal.SizeOf(mi);

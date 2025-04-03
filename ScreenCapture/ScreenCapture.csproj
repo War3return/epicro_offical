@@ -55,8 +55,30 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="BeltSetting.xaml.cs">
+      <DependentUpon>BeltSetting.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Helpers\BossImageHelper.cs" />
+    <Compile Include="Models\BossConfig.cs" />
+    <Compile Include="BossSetting.xaml.cs">
+      <DependentUpon>BossSetting.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Helpers\NativeMethods.cs" />
     <Compile Include="MonitorEnumerationHelper.cs" />
+    <Compile Include="ROIWindow.xaml.cs">
+      <DependentUpon>ROIWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="utilities\SoftwareBitmapCopy.cs" />
     <Compile Include="WindowEnumerationHelper.cs" />
+    <Compile Include="WindowInfo.cs" />
+    <Page Include="BeltSetting.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="BossSetting.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -69,6 +91,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="ROIWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">

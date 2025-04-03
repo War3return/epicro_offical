@@ -24,11 +24,15 @@
 
 using Composition.WindowsRuntimeHelpers;
 using System;
+using System.Diagnostics;
+using System.Linq;
 using Windows.Graphics;
 using Windows.Graphics.Capture;
 using Windows.Graphics.DirectX;
 using Windows.Graphics.DirectX.Direct3D11;
 using Windows.UI.Composition;
+using Windows.UI.Xaml.Media.Imaging;
+using System.IO;
 
 namespace CaptureSampleCore
 {
@@ -91,6 +95,7 @@ namespace CaptureSampleCore
 
         public void StartCapture()
         {
+            Debug.WriteLine("StartCapture 호출됨");
             session.StartCapture();
         }
 
@@ -101,6 +106,7 @@ namespace CaptureSampleCore
 
         private void OnFrameArrived(Direct3D11CaptureFramePool sender, object args)
         {
+            //Debug.WriteLine($"[FrameArrived] New frame received at {DateTime.Now}");
             var newSize = false;
 
             using (var frame = sender.TryGetNextFrame())
@@ -114,10 +120,10 @@ namespace CaptureSampleCore
                     newSize = true;
                     lastSize = frame.ContentSize;
                     swapChain.ResizeBuffers(
-                        2, 
-                        lastSize.Width, 
-                        lastSize.Height, 
-                        SharpDX.DXGI.Format.B8G8R8A8_UNorm, 
+                        2,
+                        lastSize.Width,
+                        lastSize.Height,
+                        SharpDX.DXGI.Format.B8G8R8A8_UNorm,
                         SharpDX.DXGI.SwapChainFlags.None);
                 }
 
@@ -129,16 +135,17 @@ namespace CaptureSampleCore
 
             } // Retire the frame.
 
-            swapChain.Present(0, SharpDX.DXGI.PresentFlags.None);
+                swapChain.Present(0, SharpDX.DXGI.PresentFlags.None);
 
-            if (newSize)
-            {
-                framePool.Recreate(
-                    device,
-                    DirectXPixelFormat.B8G8R8A8UIntNormalized,
-                    2,
-                    lastSize);
-            }
+                if (newSize)
+                {
+                    framePool.Recreate(
+                        device,
+                        DirectXPixelFormat.B8G8R8A8UIntNormalized,
+                        2,
+                        lastSize);
+                }
         }
     }
+
 }
