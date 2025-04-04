@@ -37,6 +37,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -59,6 +60,8 @@
       <DependentUpon>BeltSetting.xaml</DependentUpon>
     </Compile>
     <Compile Include="Helpers\BossImageHelper.cs" />
+    <Compile Include="Helpers\OcrHelper.cs" />
+    <Compile Include="Helpers\ParseRoiHelper.cs" />
     <Compile Include="Models\BossConfig.cs" />
     <Compile Include="BossSetting.xaml.cs">
       <DependentUpon>BossSetting.xaml</DependentUpon>
@@ -135,6 +138,9 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.SDK.Contracts">
       <Version>10.0.22621.2</Version>
+    </PackageReference>
+    <PackageReference Include="Tesseract">
+      <Version>5.2.0</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -71,8 +71,8 @@
                     </TabItem>
                     <TabItem Header="보스" Margin="2,-2,-2,0">
                         <Grid Background="#FFE5E5E5" Height="150">
-                            <Button Content="시작" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="64" Height="25"/>
-                            <Button Content="중지" HorizontalAlignment="Center" Margin="0,10,0,0" VerticalAlignment="Top" Width="64" Height="25"/>
+                            <Button Content="시작" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="64" Height="25" Click="Button_Click_1"/>
+                            <Button Content="중지" HorizontalAlignment="Center" Margin="0,10,0,0" VerticalAlignment="Top" Width="64" Height="25" Click="Button_Click_2"/>
                             <Button x:Name="btn_BossSetting" Content="설정" HorizontalAlignment="Left" Margin="161,10,0,0" VerticalAlignment="Top" Width="64" Height="25" Click="btn_BossSetting_Click" />
                             <GroupBox Header="인식방법" Margin="118,41,10,0" Height="48" VerticalAlignment="Top">
                                 <Grid>

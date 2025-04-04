@@ -39,6 +39,8 @@ using Windows.Foundation.Metadata;
 using Windows.Graphics.Capture;
 using Windows.UI.Composition;
 using WPFCaptureSample.Utilites;
+using System.Windows.Threading;
+using WPFCaptureSample.Helpers;
 
 namespace WPFCaptureSample
 {
@@ -57,6 +59,7 @@ namespace WPFCaptureSample
 
         private BasicCapture backgroundCapture;
         public static WindowInfo TargetWindow { get; private set; }
+        private DispatcherTimer ocrTimer;
 
         [StructLayout(LayoutKind.Sequential)]
         public struct RECT
@@ -287,6 +290,41 @@ namespace WPFCaptureSample
         {
             var bossSetting = new BossSetting();
             bossSetting.ShowDialog();
+        }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            StartOcrTimer();
+        }
+
+        private void StartOcrTimer()
+        {
+            ocrTimer = new DispatcherTimer();
+            ocrTimer.Interval = TimeSpan.FromMilliseconds(500); // 0.5초마다 실행
+            ocrTimer.Tick += async (s, e) =>
+            {
+                var hwnd = TargetWindow.Handle; // 타겟 윈도우 핸들
+                var roi = ParseRoiHelper.ParseRectFromSettings(Properties.Settings.Default.Roi_Gold); // 예시
+                var text = await SoftwareBitmapCopy.CaptureAndRecognizeAsync(hwnd, roi);
+
+                Debug.WriteLine($"[OCR] 인식된 텍스트: {text}");
+                // 여기서 텍스트를 UI에 표시하거나 저장하면 됩니다.
+            };
+            ocrTimer.Start();
+        }
+
+        private void StopOcrTimer()
+        {
+            if (ocrTimer != null)
+            {
+                ocrTimer.Stop();
+                ocrTimer = null;
+            }
+        }
+
+        private void Button_Click_2(object sender, RoutedEventArgs e)
+        {
+            StopOcrTimer();
         }
     }
 }

@@ -47,6 +47,8 @@ namespace CaptureSampleCore
         private SharpDX.Direct3D11.Device d3dDevice;
         private SharpDX.DXGI.SwapChain1 swapChain;
 
+        public SharpDX.Direct3D11.Texture2D LatestFrameTexture { get; private set; }
+
         public BasicCapture(IDirect3DDevice d, GraphicsCaptureItem i)
         {
             item = i;
@@ -131,6 +133,9 @@ namespace CaptureSampleCore
                 using (var bitmap = Direct3D11Helper.CreateSharpDXTexture2D(frame.Surface))
                 {
                     d3dDevice.ImmediateContext.CopyResource(bitmap, backBuffer);
+                    // 최신 프레임 보관 (기존 것 dispose 처리 필요 시 명확하게 관리)
+                    LatestFrameTexture?.Dispose();
+                    LatestFrameTexture = bitmap;
                 }
 
             } // Retire the frame.
