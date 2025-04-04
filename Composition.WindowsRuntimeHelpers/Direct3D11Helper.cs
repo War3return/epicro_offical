@@ -26,11 +26,15 @@ using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+using SharpDX.Direct3D11;
+using SharpDX.DXGI;
 using Windows.Graphics.Capture;
 using Windows.Graphics.DirectX;
 using Windows.Graphics.DirectX.Direct3D11;
 using Windows.Graphics.Imaging;
 using Windows.UI.Xaml.Media.Imaging;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace Composition.WindowsRuntimeHelpers
 {
@@ -181,7 +185,44 @@ namespace Composition.WindowsRuntimeHelpers
                 return bitmap;
             }
         }
+        public static Bitmap ExtractBitmapFromTexture(Texture2D texture)
+        {
+            var device = texture.Device;
+            var desc = texture.Description;
 
+            var stagingDesc = new Texture2DDescription
+            {
+                Width = desc.Width,
+                Height = desc.Height,
+                MipLevels = 1,
+                ArraySize = 1,
+                Format = desc.Format,
+                SampleDescription = new SampleDescription(1, 0),
+                Usage = ResourceUsage.Staging,
+                BindFlags = BindFlags.None,
+                CpuAccessFlags = CpuAccessFlags.Read,
+                OptionFlags = ResourceOptionFlags.None
+            };
 
+            using (var staging = new Texture2D(device, stagingDesc))
+            {
+                device.ImmediateContext.CopyResource(texture, staging);
+
+                var dataBox = device.ImmediateContext.MapSubresource(
+                    staging, 0, MapMode.Read, SharpDX.Direct3D11.MapFlags.None);
+
+                int width = desc.Width;
+                int height = desc.Height;
+                int stride = dataBox.RowPitch; // 중요! 실제 stride 사용
+
+                // 새 Bitmap 생성
+                var bitmap = new Bitmap(width, height, stride, PixelFormat.Format32bppArgb, dataBox.DataPointer);
+
+                device.ImmediateContext.UnmapSubresource(staging, 0);
+
+                // Bitmap 복사본 생성 (원본 포인터는 GPU 메모리이므로 해제 전 안전하게 복사)
+                return new Bitmap(bitmap);
+            }
+        }
     }
 }

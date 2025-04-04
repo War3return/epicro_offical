@@ -109,32 +109,5 @@ namespace WPFCaptureSample.Utilites
                 }
             }
         }
-
-        public static async Task<string> CaptureAndRecognizeAsync(IntPtr hwnd, Int32Rect roi, string tessdataPath = "tessdata")
-        {
-            var fullBitmap = await CaptureSingleFrameAsync(hwnd);
-            if (fullBitmap == null) return null;
-
-            var cropped = new CroppedBitmap(fullBitmap, roi);
-
-            using (var ms = new MemoryStream())
-            {
-                System.Windows.Media.Imaging.BitmapEncoder encoder = new PngBitmapEncoder();
-                encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(cropped));
-                encoder.Save(ms);
-
-                ms.Position = 0;
-                using (var bitmap = new System.Drawing.Bitmap(ms))
-                using (var engine = new Tesseract.TesseractEngine(@"tesseract/tessdata", "eng", Tesseract.EngineMode.Default))
-                {
-                    using (var img = Tesseract.PixConverter.ToPix(bitmap))
-                    using (var page = engine.Process(img))
-                    {
-                        return page.GetText().Trim();
-                    }
-                }
-            }
-        }
-
     }
 }

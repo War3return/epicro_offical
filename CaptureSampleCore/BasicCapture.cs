@@ -33,6 +33,8 @@ using Windows.Graphics.DirectX.Direct3D11;
 using Windows.UI.Composition;
 using Windows.UI.Xaml.Media.Imaging;
 using System.IO;
+using SharpDX.Direct3D11;
+using SharpDX.DXGI;
 
 namespace CaptureSampleCore
 {
@@ -46,6 +48,7 @@ namespace CaptureSampleCore
         private IDirect3DDevice device;
         private SharpDX.Direct3D11.Device d3dDevice;
         private SharpDX.DXGI.SwapChain1 swapChain;
+        private object _textureLock = new object();
 
         public SharpDX.Direct3D11.Texture2D LatestFrameTexture { get; private set; }
 
@@ -130,8 +133,8 @@ namespace CaptureSampleCore
                 }
 
                 using (var backBuffer = swapChain.GetBackBuffer<SharpDX.Direct3D11.Texture2D>(0))
-                using (var bitmap = Direct3D11Helper.CreateSharpDXTexture2D(frame.Surface))
                 {
+                    var bitmap = Direct3D11Helper.CreateSharpDXTexture2D(frame.Surface);
                     d3dDevice.ImmediateContext.CopyResource(bitmap, backBuffer);
                     // 최신 프레임 보관 (기존 것 dispose 처리 필요 시 명확하게 관리)
                     LatestFrameTexture?.Dispose();
@@ -150,6 +153,31 @@ namespace CaptureSampleCore
                         2,
                         lastSize);
                 }
+        }
+        public Texture2D GetSafeTextureCopy()
+        {
+            lock (_textureLock)
+            {
+                if (LatestFrameTexture == null) return null;
+
+                var desc = LatestFrameTexture.Description;
+                var staging = new Texture2D(d3dDevice, new Texture2DDescription
+                {
+                    Width = desc.Width,
+                    Height = desc.Height,
+                    Format = desc.Format,
+                    Usage = ResourceUsage.Staging,
+                    CpuAccessFlags = CpuAccessFlags.Read,
+                    BindFlags = BindFlags.None,
+                    MipLevels = 1,
+                    ArraySize = 1,
+                    SampleDescription = new SampleDescription(1, 0),
+                    OptionFlags = ResourceOptionFlags.None
+                });
+
+                d3dDevice.ImmediateContext.CopyResource(LatestFrameTexture, staging);
+                return staging; // ← safe copy
+            }
         }
     }
 

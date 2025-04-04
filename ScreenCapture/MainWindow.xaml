@@ -83,19 +83,24 @@
                                     <Grid.RowDefinitions>
                                         <RowDefinition/>
                                     </Grid.RowDefinitions>
-                                    <RadioButton Content="골드" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                    <RadioButton Content="목재" HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Column="1" Margin="5,0,0,0"/>
+                                    <RadioButton x:Name="rb_Gold" Content="골드" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                    <RadioButton x:Name="rb_Tree" Content="목재" HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Column="1" Margin="5,0,0,0"/>
                                 </Grid>
                             </GroupBox>
                             <GroupBox Header="보스존" Margin="2,40,117,0" Height="49" VerticalAlignment="Top">
-                                <ComboBox Margin="0,0,-2,0" Height="24">
-                                    <ComboBoxItem Content="옵션 1" />
-                                    <ComboBoxItem Content="옵션 2" />
-                                    <ComboBoxItem Content="옵션 3" />
+                                <ComboBox x:Name="cbb_BossZone" Margin="0,0,-2,0" Height="24">
+                                    <ComboBoxItem Content="유적지" />
+                                    <ComboBoxItem Content="해역" />
+                                    <ComboBoxItem Content="태엽" />
+                                    <ComboBoxItem Content="키사메" />
+                                    <ComboBoxItem Content="키미" />
+                                    <ComboBoxItem Content="데달" />
+                                    <ComboBoxItem Content="유기토" />
+                                    <ComboBoxItem Content="사신수" />
                                 </ComboBox>
                             </GroupBox>
                             <GroupBox Header="소환순서" Margin="2,89,117,0" Height="49" VerticalAlignment="Top">
-                                <TextBox HorizontalAlignment="Left" TextWrapping="Wrap" Width="106"/>
+                                <TextBox x:Name="txt_BossOrder" HorizontalAlignment="Left" TextWrapping="Wrap" Width="106"/>
                             </GroupBox>
                         </Grid>
                     </TabItem>

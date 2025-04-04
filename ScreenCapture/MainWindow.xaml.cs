@@ -41,6 +41,11 @@ using Windows.UI.Composition;
 using WPFCaptureSample.Utilites;
 using System.Windows.Threading;
 using WPFCaptureSample.Helpers;
+using Tesseract;
+using System.IO;
+using System.Drawing;
+using System.Drawing.Imaging;
+
 
 namespace WPFCaptureSample
 {
@@ -57,9 +62,12 @@ namespace WPFCaptureSample
         private BasicSampleApplication sample;
         private ObservableCollection<WindowInfo> processes;
 
-        private BasicCapture backgroundCapture;
+        public static BasicCapture backgroundCapture;
+        private OcrService ocrService;
         public static WindowInfo TargetWindow { get; private set; }
-        private DispatcherTimer ocrTimer;
+        private System.Timers.Timer ocrTimer;
+        public static TesseractEngine ocrEngine;
+        private bool isOcrRunning = false;
 
         [StructLayout(LayoutKind.Sequential)]
         public struct RECT
@@ -88,6 +96,8 @@ namespace WPFCaptureSample
 #if DEBUG
             // Force graphicscapture.dll to load.
             var picker = new GraphicsCapturePicker();
+            string tessPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tesseract", "tessdata");
+            ocrEngine = new TesseractEngine(tessPath, "eng", EngineMode.Default);
 #endif
         }
 
@@ -299,27 +309,13 @@ namespace WPFCaptureSample
 
         private void StartOcrTimer()
         {
-            ocrTimer = new DispatcherTimer();
-            ocrTimer.Interval = TimeSpan.FromMilliseconds(500); // 0.5초마다 실행
-            ocrTimer.Tick += async (s, e) =>
-            {
-                var hwnd = TargetWindow.Handle; // 타겟 윈도우 핸들
-                var roi = ParseRoiHelper.ParseRectFromSettings(Properties.Settings.Default.Roi_Gold); // 예시
-                var text = await SoftwareBitmapCopy.CaptureAndRecognizeAsync(hwnd, roi);
-
-                Debug.WriteLine($"[OCR] 인식된 텍스트: {text}");
-                // 여기서 텍스트를 UI에 표시하거나 저장하면 됩니다.
-            };
-            ocrTimer.Start();
+            ocrService = new OcrService(() => backgroundCapture.GetSafeTextureCopy(), ocrEngine);
+            ocrService.Start();
         }
 
         private void StopOcrTimer()
         {
-            if (ocrTimer != null)
-            {
-                ocrTimer.Stop();
-                ocrTimer = null;
-            }
+            ocrService?.Stop();
         }
 
         private void Button_Click_2(object sender, RoutedEventArgs e)

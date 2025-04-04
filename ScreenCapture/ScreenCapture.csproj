@@ -38,6 +38,7 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -59,9 +60,12 @@
     <Compile Include="BeltSetting.xaml.cs">
       <DependentUpon>BeltSetting.xaml</DependentUpon>
     </Compile>
+    <Compile Include="BossRecognizer.cs" />
     <Compile Include="Helpers\BossImageHelper.cs" />
-    <Compile Include="Helpers\OcrHelper.cs" />
+    <Compile Include="Helpers\InputHelper.cs" />
+    <Compile Include="Helpers\OcrService.cs" />
     <Compile Include="Helpers\ParseRoiHelper.cs" />
+    <Compile Include="Logic\BossSummonerWpf.cs" />
     <Compile Include="Models\BossConfig.cs" />
     <Compile Include="BossSetting.xaml.cs">
       <DependentUpon>BossSetting.xaml</DependentUpon>
@@ -136,6 +140,15 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Emgu.CV">
+      <Version>4.10.0.5680</Version>
+    </PackageReference>
+    <PackageReference Include="Emgu.CV.Bitmap">
+      <Version>4.10.0.5680</Version>
+    </PackageReference>
+    <PackageReference Include="Emgu.CV.runtime.windows">
+      <Version>4.10.0.5680</Version>
+    </PackageReference>
     <PackageReference Include="Microsoft.Windows.SDK.Contracts">
       <Version>10.0.22621.2</Version>
     </PackageReference>
@@ -144,4 +157,12 @@
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
 </Project>
