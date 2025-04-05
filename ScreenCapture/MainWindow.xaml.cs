@@ -45,6 +45,7 @@ using Tesseract;
 using System.IO;
 using System.Drawing;
 using System.Drawing.Imaging;
+using WPFCaptureSample.Logic;
 
 
 namespace WPFCaptureSample
@@ -61,6 +62,7 @@ namespace WPFCaptureSample
 
         private BasicSampleApplication sample;
         private ObservableCollection<WindowInfo> processes;
+        private BossSummonerWpf summoner;
 
         public static BasicCapture backgroundCapture;
         private OcrService ocrService;
@@ -92,15 +94,18 @@ namespace WPFCaptureSample
         public MainWindow()
         {
             InitializeComponent();
-
 #if DEBUG
             // Force graphicscapture.dll to load.
             var picker = new GraphicsCapturePicker();
             string tessPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tesseract", "tessdata");
             ocrEngine = new TesseractEngine(tessPath, "eng", EngineMode.Default);
+            InitBossSummoner();
 #endif
         }
-
+        private void InitBossSummoner()
+        {
+            summoner = new BossSummonerWpf(AppendLog);
+        }
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             string hero = Properties.Settings.Default.HeroNum;
@@ -108,7 +113,31 @@ namespace WPFCaptureSample
             string beltNum = Properties.Settings.Default.BeltNum;
             string beltSpeed = Properties.Settings.Default.BeltSpeed;
 
-            Debug.WriteLine($"불러온 설정값 - 영웅: {hero}, 창고: {bag}, 벨트번호: {beltNum}, 속도: {beltSpeed}");
+            // 🔹 보스존 복원
+            foreach (ComboBoxItem item in cbb_BossZone.Items)
+            {
+                if (item.Content.ToString() == Properties.Settings.Default.BossZone)
+                {
+                    cbb_BossZone.SelectedItem = item;
+                    break;
+                }
+            }
+
+            // 🔹 인식방법 복원
+            string roi = Properties.Settings.Default.SelectedROI;
+            if (roi == "gold") rb_Gold.IsChecked = true;
+            else if (roi == "tree") rb_Tree.IsChecked = true;
+
+            // 🔹 소환순서 복원
+            txt_BossOrder.Text = Properties.Settings.Default.BossOrder;
+
+            // 🔹 체크박스 복원
+            cb_save.IsChecked = Properties.Settings.Default.SaveEnabled;
+            cb_pickup.IsChecked = Properties.Settings.Default.PickupEnabled;
+            cb_heroselect.IsChecked = Properties.Settings.Default.HeroSelectEnabled;
+
+            AppendLog("에피크로오오오오오");
+            //Debug.WriteLine($"불러온 설정값 - 영웅: {hero}, 창고: {bag}, 벨트번호: {beltNum}, 속도: {beltSpeed}");
 
             LoadRoiAreas();
             /*
@@ -131,6 +160,46 @@ namespace WPFCaptureSample
             // 기존 실시간 송출 제거 → 대신 BackgroundCapture만 시작
         }
 
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            // 🔸 보스존 저장
+            if (cbb_BossZone.SelectedItem is ComboBoxItem selectedZone)
+            {
+                Properties.Settings.Default.BossZone = selectedZone.Content.ToString();
+            }
+
+            // 🔸 인식방법 저장 (라디오버튼)
+            if (rb_Gold.IsChecked == true)
+                Properties.Settings.Default.SelectedROI = "gold";
+            else if (rb_Tree.IsChecked == true)
+                Properties.Settings.Default.SelectedROI = "tree";
+
+            // 🔸 소환순서 저장
+            Properties.Settings.Default.BossOrder = txt_BossOrder.Text;
+
+            // 🔹 체크박스 상태 저장
+            Properties.Settings.Default.SaveEnabled = cb_save.IsChecked == true;
+            Properties.Settings.Default.PickupEnabled = cb_pickup.IsChecked == true;
+            Properties.Settings.Default.HeroSelectEnabled = cb_heroselect.IsChecked == true;
+
+            Properties.Settings.Default.Save(); // 저장!
+
+            // 보스소환기가 실행 중이면 중지
+            if (summoner != null)
+            {
+                summoner.Stop();  // 내부적으로 isRunning = false, CancellationToken.Cancel()
+            }
+        }
+
+        public void AppendLog(string message)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                txt_log.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\n");
+                txt_log.ScrollToEnd(); // 항상 최신 로그 보기
+            });
+        }
+
         private void StopButton_Click(object sender, RoutedEventArgs e)
         {
             //StopCapture();
@@ -150,6 +219,14 @@ namespace WPFCaptureSample
             if (process != null)
             {
                 TargetWindow = process;
+
+                if (backgroundCapture != null)
+                {
+                    backgroundCapture.StopCapture();
+                    backgroundCapture.Dispose(); // 기존 캡처 정리
+                    backgroundCapture = null;
+                    Debug.WriteLine("이전 백그라운드 캡처 해제 완료");
+                }
                 //StopCapture();
                 var hwnd = process.Handle;
                 try
@@ -298,19 +375,14 @@ namespace WPFCaptureSample
 
         private void btn_BossSetting_Click(object sender, RoutedEventArgs e)
         {
+            if (TargetWindow == null)
+            {
+                MessageBox.Show("먼저 캡처할 창을 선택하세요.");
+                return;
+            }
+
             var bossSetting = new BossSetting();
             bossSetting.ShowDialog();
-        }
-
-        private void Button_Click_1(object sender, RoutedEventArgs e)
-        {
-            StartOcrTimer();
-        }
-
-        private void StartOcrTimer()
-        {
-            ocrService = new OcrService(() => backgroundCapture.GetSafeTextureCopy(), ocrEngine);
-            ocrService.Start();
         }
 
         private void StopOcrTimer()
@@ -318,9 +390,39 @@ namespace WPFCaptureSample
             ocrService?.Stop();
         }
 
-        private void Button_Click_2(object sender, RoutedEventArgs e)
+        private void btn_BossStart_Click(object sender, RoutedEventArgs e)
         {
-            StopOcrTimer();
+            if (TargetWindow == null)
+            {
+                MessageBox.Show("먼저 캡처할 창을 선택하세요.");
+                return;
+            }
+
+            //StartOcrTimer();
+            if (cbb_BossZone.SelectedItem is ComboBoxItem selectedItem)
+            {
+                summoner.BossZone = selectedItem.Content.ToString();
+            }
+
+            summoner.BossOrder = txt_BossOrder.Text;
+
+            if (rb_Gold.IsChecked == true)
+                Properties.Settings.Default.SelectedROI = "gold";
+            else if (rb_Tree.IsChecked == true)
+                Properties.Settings.Default.SelectedROI = "tree";
+
+            summoner.Start();
+        }
+
+        private void btn_BossStop_Click(object sender, RoutedEventArgs e)
+        {
+            if (TargetWindow == null)
+            {
+                MessageBox.Show("먼저 캡처할 창을 선택하세요.");
+                return;
+            }
+
+            summoner?.Stop();
         }
     }
 }

@@ -11,35 +11,44 @@ using Windows.Media.Ocr;
 using WPFCaptureSample.Helpers;
 using WPFCaptureSample.Models;
 using System.Windows.Forms;
+using SharpDX.Direct3D11;
+using Composition.WindowsRuntimeHelpers;
+using OpenCvSharp;
+using Windows.Media.Capture;
 
 namespace WPFCaptureSample.Logic
 {
     public class BossSummonerWpf
     {
         private CancellationTokenSource cts;
-        private readonly Func<Bitmap> captureFunc;
         private readonly Action<string> log;
         private readonly Dictionary<string, BossConfig> bossConfigs;
         private int previousGold;
         private OcrService ocrService;
+        private Texture2D bossMatcher;
         private bool isRunning;
 
         public string BossOrder { get; set; }
         public string BossZone { get; set; }
 
-        public BossSummonerWpf(Func<Bitmap> captureFunc, Action<string> log)
+        public BossSummonerWpf(Action<string> log)
         {
             isRunning = false;
-            this.captureFunc = captureFunc;
             this.log = log;
             this.bossConfigs = BossConfigManager.GetBossConfigs();
-
             ocrService = new OcrService(() => MainWindow.backgroundCapture.GetSafeTextureCopy(), MainWindow.ocrEngine);
+
 
         }
 
         public void Start()
         {
+            if (isRunning)
+            {
+                log("[보스소환] 이미 실행 중입니다");
+                return;
+            }
+
             if (cts != null)
                 return;
 
@@ -50,9 +59,21 @@ namespace WPFCaptureSample.Logic
 
         public void Stop()
         {
-            cts?.Cancel();
-            cts = null;
-            log("[보스소환] 자동 소환 중지됨");
+            if (!isRunning)
+            {
+                return; // 실행 중이 아니면 아무 것도 하지 않고 종료
+            }
+
+            if (cts != null)
+            {
+                cts.Cancel();
+                cts = null;
+                isRunning = false;
+                log("[보스소환] 자동 소환 중지됨");
+
+                // OCR 타이머도 종료
+                ocrService?.Stop();
+            }
         }
 
         private void Run(CancellationToken token)
@@ -101,22 +122,34 @@ namespace WPFCaptureSample.Logic
             }
             while (isRunning)
             {
+                //log("소환 반복문 시작");
                 foreach (var bossName in orderedBosses)
                 {
-                    if (!isRunning) return;
-
-                    if (!bossesInZone.Contains(bossName)) continue;
-
-                    if (bossConfigs.ContainsKey(bossName)) // 이미지 비교함수 추가.
+                    //log("보스 체크 시작");
+                    if (token.IsCancellationRequested)
                     {
+                        log("보스소환 반복문 종료. 토큰문제");
+                        return;
+                    }
+
+                    if (!bossesInZone.Contains(bossName))
+                    {
+                        log("보스인존 체크 실패");
+                        continue;
+                    }
+
+                    if (bossConfigs.ContainsKey(bossName) && IsBossMatched(bossConfigs[bossName])) // 이미지 비교함수 추가.
+                    {
+                        Console.WriteLine($"[INFO] {bossName} 활성화됨. 소환");
                         SummonBoss(bossName);
+
                         int startValue = previousValue;
                         DateTime startTime = DateTime.Now;
                         bool valueChanged = false;
 
                         while ((DateTime.Now - startTime).TotalSeconds < 300)
                         {
-                            if(!isRunning) return;
+                            if (token.IsCancellationRequested) return;
                             int currentValue = ocrService.ReadCurrentValue(checkRoi);
                             if (currentValue == -1)
                             {
@@ -125,6 +158,7 @@ namespace WPFCaptureSample.Logic
 
                             if (currentValue != startValue)
                             {
+                                Console.WriteLine($"[INFO] 골드 변동 감지: {startValue} -> {currentValue}");
                                 previousValue = currentValue;
                                 valueChanged = true;
                                 break;
@@ -133,22 +167,14 @@ namespace WPFCaptureSample.Logic
                         }
                         if (!valueChanged)
                         {
-                            if (!isRunning) return;
+                            if (token.IsCancellationRequested) return;
                             // 로그 [WARNING] 5분 동안 골드 변동이 없어 다음 보스를 찾습니다. 남기기
                         }
                         break;
                     }
+                    Console.WriteLine($"[MEM] {GC.GetTotalMemory(false) / 1024 / 1024} MB");
                 }
                 Thread.Sleep(500);
-            }
-            bool goldChanged = false;
-
-            DateTime start = DateTime.Now;
-
-            while ((DateTime.Now - start).TotalDays < 300)
-            {
-                int valueAfter = ocrService.ReadCurrentValue(checkRoi);
-                Thread.Sleep(1000);
             }
         }
         private void SummonBoss(string bossKey)
@@ -157,6 +183,38 @@ namespace WPFCaptureSample.Logic
             Console.WriteLine($"[INFO] {bossKey} 소환 - {key}");
 
             InputHelper.SendKey(key.ToString());
+        }
+        private bool IsBossMatched(BossConfig config)
+        {
+            try
+            {
+                //log("이미지매치 실행");
+                // 1. GPU 프레임 → Texture2D 복사
+                using (var texture = MainWindow.backgroundCapture.GetSafeTextureCopy())
+                {
+                    if (texture == null)
+                    {
+                        log("[WARNING] Texture 복사 실패 (LatestFrameTexture가 null)");
+                        return false;
+                    }
+
+                    // 2. Texture2D → Bitmap
+                    using (var bitmap = Direct3D11Helper.ExtractBitmapFromTexture(texture))
+                    {
+                        // 3. Bitmap → Mat
+                        using (var mat = BossMatcher.Convert(bitmap))
+                        {
+                            string imageFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images");
+                            return BossMatcher.MatchBossByRoi(mat, config, imageFolder);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                log($"[ERROR] 보스 매칭 중 예외 발생: {ex.Message}");
+                return false;
+            }
         }
         // 보스 키 매핑
         private Keys GetBossKey(string bossName)

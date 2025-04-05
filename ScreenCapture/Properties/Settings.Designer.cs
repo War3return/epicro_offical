@@ -154,5 +154,77 @@ namespace WPFCaptureSample.Properties {
                 this["Roi_Tree"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string BossZone {
+            get {
+                return ((string)(this["BossZone"]));
+            }
+            set {
+                this["BossZone"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string SelectedROI {
+            get {
+                return ((string)(this["SelectedROI"]));
+            }
+            set {
+                this["SelectedROI"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string BossOrder {
+            get {
+                return ((string)(this["BossOrder"]));
+            }
+            set {
+                this["BossOrder"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool SaveEnabled {
+            get {
+                return ((bool)(this["SaveEnabled"]));
+            }
+            set {
+                this["SaveEnabled"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool PickupEnabled {
+            get {
+                return ((bool)(this["PickupEnabled"]));
+            }
+            set {
+                this["PickupEnabled"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool HeroSelectEnabled {
+            get {
+                return ((bool)(this["HeroSelectEnabled"]));
+            }
+            set {
+                this["HeroSelectEnabled"] = value;
+            }
+        }
     }
 }

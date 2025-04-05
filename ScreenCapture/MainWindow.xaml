@@ -30,7 +30,8 @@
         xmlns:local="clr-namespace:WPFCaptureSample"
         mc:Ignorable="d"
         Title="WPF Capture Sample" Height="450" Width="800"
-        Loaded="Window_Loaded">
+        Loaded="Window_Loaded"
+        Closing="Window_Closing">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="265" />
@@ -62,17 +63,17 @@
                             <Button x:Name="btnBeltSet" Content="설정" Margin="0,10,10,0" VerticalAlignment="Top" Height="25" HorizontalAlignment="Right" Width="64"/>
                             <GroupBox Header="온오프" Margin="10,40,129,0" IsEnabled="True" Height="98" VerticalAlignment="Top">
                                 <StackPanel>
-                                    <CheckBox Content="세이브" Margin="5" IsChecked="False" IsEnabled="True"/>
-                                    <CheckBox Content="범줍" Margin="5" IsChecked="False" IsEnabled="True"/>
-                                    <CheckBox Content="영웅선택" Margin="5" IsChecked="False" IsEnabled="True"/>
+                                    <CheckBox x:Name="cb_save" Content="세이브" Margin="5" IsChecked="False" IsEnabled="True"/>
+                                    <CheckBox x:Name="cb_pickup" Content="범줍" Margin="5" IsChecked="False" IsEnabled="True"/>
+                                    <CheckBox x:Name="cb_heroselect" Content="영웅선택" Margin="5" IsChecked="False" IsEnabled="True"/>
                                 </StackPanel>
                             </GroupBox>
                         </Grid>
                     </TabItem>
                     <TabItem Header="보스" Margin="2,-2,-2,0">
                         <Grid Background="#FFE5E5E5" Height="150">
-                            <Button Content="시작" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="64" Height="25" Click="Button_Click_1"/>
-                            <Button Content="중지" HorizontalAlignment="Center" Margin="0,10,0,0" VerticalAlignment="Top" Width="64" Height="25" Click="Button_Click_2"/>
+                            <Button x:Name="btn_BossStart" Content="시작" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="64" Height="25" Click="btn_BossStart_Click" />
+                            <Button x:Name="btn_BossStop" Content="중지" HorizontalAlignment="Center" Margin="0,10,0,0" VerticalAlignment="Top" Width="64" Height="25" Click="btn_BossStop_Click" />
                             <Button x:Name="btn_BossSetting" Content="설정" HorizontalAlignment="Left" Margin="161,10,0,0" VerticalAlignment="Top" Width="64" Height="25" Click="btn_BossSetting_Click" />
                             <GroupBox Header="인식방법" Margin="118,41,10,0" Height="48" VerticalAlignment="Top">
                                 <Grid>
@@ -111,7 +112,19 @@
         </Grid>
 
         <Grid x:Name="ControlsGrid" Margin="264,0,0,0" Grid.ColumnSpan="2">
-            <TextBox x:Name="txt_log" HorizontalAlignment="Center" Height="115" Margin="0,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="206" IsReadOnly="True"/>
+            <TextBox x:Name="txt_log"
+                     HorizontalAlignment="Center"
+                     Height="117"
+                     Margin="0,10,0,0"
+                     TextWrapping="Wrap"
+                     VerticalAlignment="Top"
+                     Width="186"
+                     IsReadOnly="True"
+                     AcceptsReturn="True"
+                     VerticalScrollBarVisibility="Auto"
+                     FontFamily="Consolas"
+                     FontSize="12"
+                     />
         </Grid>
     </Grid>
 </Window>

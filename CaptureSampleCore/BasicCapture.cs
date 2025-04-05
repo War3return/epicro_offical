@@ -48,7 +48,7 @@ namespace CaptureSampleCore
         private IDirect3DDevice device;
         private SharpDX.Direct3D11.Device d3dDevice;
         private SharpDX.DXGI.SwapChain1 swapChain;
-        private object _textureLock = new object();
+        private readonly object _textureLock = new object();
 
         public SharpDX.Direct3D11.Texture2D LatestFrameTexture { get; private set; }
 
@@ -92,9 +92,7 @@ namespace CaptureSampleCore
 
         public void Dispose()
         {
-            session?.Dispose();
-            framePool?.Dispose();
-            swapChain?.Dispose();
+            StopCapture();
             d3dDevice?.Dispose();
         }
 
@@ -102,6 +100,18 @@ namespace CaptureSampleCore
         {
             Debug.WriteLine("StartCapture 호출됨");
             session.StartCapture();
+        }
+        public void StopCapture()
+        {
+            Debug.WriteLine("StopCapture 호출됨");
+
+            session?.Dispose();  // 캡처 세션 해제
+            framePool?.Dispose();  // 프레임 풀 해제
+            swapChain?.Dispose();  // 스왑체인 해제
+
+            session = null;
+            framePool = null;
+            swapChain = null;
         }
 
         public ICompositionSurface CreateSurface(Compositor compositor)
@@ -158,7 +168,11 @@ namespace CaptureSampleCore
         {
             lock (_textureLock)
             {
-                if (LatestFrameTexture == null) return null;
+                if (LatestFrameTexture == null)
+                {
+                    Debug.WriteLine("[DEBUG] LatestFrameTexture is null");
+                    return null;
+                }
 
                 var desc = LatestFrameTexture.Description;
                 var staging = new Texture2D(d3dDevice, new Texture2DDescription

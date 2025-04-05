@@ -60,8 +60,8 @@
     <Compile Include="BeltSetting.xaml.cs">
       <DependentUpon>BeltSetting.xaml</DependentUpon>
     </Compile>
-    <Compile Include="BossRecognizer.cs" />
     <Compile Include="Helpers\BossImageHelper.cs" />
+    <Compile Include="Helpers\BossMatcher.cs" />
     <Compile Include="Helpers\InputHelper.cs" />
     <Compile Include="Helpers\OcrService.cs" />
     <Compile Include="Helpers\ParseRoiHelper.cs" />
@@ -140,17 +140,14 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Emgu.CV">
-      <Version>4.10.0.5680</Version>
-    </PackageReference>
-    <PackageReference Include="Emgu.CV.Bitmap">
-      <Version>4.10.0.5680</Version>
-    </PackageReference>
-    <PackageReference Include="Emgu.CV.runtime.windows">
-      <Version>4.10.0.5680</Version>
-    </PackageReference>
     <PackageReference Include="Microsoft.Windows.SDK.Contracts">
       <Version>10.0.22621.2</Version>
+    </PackageReference>
+    <PackageReference Include="OpenCvSharp4.Extensions">
+      <Version>4.10.0.20241108</Version>
+    </PackageReference>
+    <PackageReference Include="OpenCvSharp4.Windows">
+      <Version>4.10.0.20241108</Version>
     </PackageReference>
     <PackageReference Include="Tesseract">
       <Version>5.2.0</Version>
