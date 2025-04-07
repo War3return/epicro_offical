@@ -94,6 +94,7 @@ namespace CaptureSampleCore
         {
             StopCapture();
             d3dDevice?.Dispose();
+            d3dDevice = null;
         }
 
         public void StartCapture()
