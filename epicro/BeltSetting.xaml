@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:epicro"
         mc:Ignorable="d"
-        Title="벨트설정" Height="279" Width="250"
+        Title="벨트설정" Height="293" Width="250"
+        Icon="/epicro_sub.ico"
         Loaded="Window_Loaded">
     <Grid>
         <Grid.RowDefinitions>

@@ -102,5 +102,11 @@ namespace epicro
                 MessageBox.Show("보스존을 선택해주세요.");
             }
         }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            var ocrsetttingwindow = new OcrSettingWindow();
+            ocrsetttingwindow.ShowDialog();
+        }
     }
 }

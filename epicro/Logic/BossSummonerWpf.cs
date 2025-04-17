@@ -16,6 +16,7 @@ using Composition.WindowsRuntimeHelpers;
 using OpenCvSharp;
 using Windows.Media.Capture;
 using System.Collections.ObjectModel;
+using Windows.Networking;
 
 namespace epicro.Logic
 {
@@ -23,7 +24,7 @@ namespace epicro.Logic
     {
         private CancellationTokenSource cts;
         private readonly Action<string> log;
-        private readonly Dictionary<string, BossConfig> bossConfigs;
+        //private readonly Dictionary<string, BossConfig> bossConfigs;
         private int previousGold;
         private OcrService ocrService;
         private Texture2D bossMatcher;
@@ -40,10 +41,24 @@ namespace epicro.Logic
 
         public BossSummonerWpf(Action<string> log, ObservableCollection<BossStats> bossStatsList, Action<int, double> updateWoodCallback)
         {
+            Properties.Settings.Default.Reload();
             isRunning = false;
             this.log = log;
-            this.bossConfigs = BossConfigManager.GetBossConfigs();
-            this.ocrService = new OcrService(() => MainWindow.backgroundCapture.GetSafeTextureCopy(), MainWindow.ocrEngine);
+            //this.bossConfigs = BossConfigManager.GetBossConfigs();
+            this.ocrService = new OcrService(() =>
+            {
+                var hwnd = MainWindow.TargetWindow?.Handle ?? IntPtr.Zero;
+
+                if (WindowEnumerationHelper.IsWindowMinimized(hwnd))
+                {
+                    //log("[INFO] 대상 창이 최소화됨 → 자동 복원 시도");
+                    WindowEnumerationHelper.RestoreWindow(hwnd);
+                    Thread.Sleep(500); // 복원 후 안정 대기
+                }
+
+                return MainWindow.backgroundCapture.GetSafeTextureCopy();
+            }, MainWindow.ocrEngine);
+            ocrService.RefreshFilterSettings();
             this._bossStatsList = bossStatsList;
             this.updateWoodCallback = updateWoodCallback; // 콜백 저장
         }
@@ -127,6 +142,7 @@ namespace epicro.Logic
                 // 2단계: 해당 보스 키를 가진 보스를 찾아서 그 보스를 순서대로 매핑
                 foreach (var boss in bossesInZone)
                 {
+                    var bossConfigs = BossConfigManager.GetBossConfigs();
                     if (bossConfigs.ContainsKey(boss) && bossConfigs[boss].Key == bossKey.ToString().ToUpper())
                     {
                         orderedBosses.Add(boss);  // 순서대로 보스를 추가
@@ -154,67 +170,78 @@ namespace epicro.Logic
             }
             while (isRunning)
             {
-                //log("소환 반복문 시작");
-                foreach (var bossName in orderedBosses)
+                try
                 {
-                    //log("보스 체크 시작");
-                    if (token.IsCancellationRequested)
+                    //log("소환 반복문 시작");
+                    foreach (var bossName in orderedBosses)
                     {
-                        log("보스소환 반복문 종료. 토큰문제");
-                        return;
-                    }
-
-                    if (!bossesInZone.Contains(bossName))
-                    {
-                        log("보스인존 체크 실패");
-                        continue;
-                    }
-
-                    if (bossConfigs.ContainsKey(bossName) && IsBossMatched(bossConfigs[bossName])) // 이미지 비교함수 추가.
-                    {
-                        //Console.WriteLine($"[INFO] {bossName} 활성화됨. 소환");
-                        SummonBoss(bossName);
-
-                        int startValue = previousValue;
-                        DateTime bossStartTime = DateTime.Now;
-                        bool valueChanged = false;
-
-                        while ((DateTime.Now - bossStartTime).TotalSeconds < 300)
+                        //log("보스 체크 시작");
+                        if (token.IsCancellationRequested)
                         {
-                            if (token.IsCancellationRequested) return;
-                            int currentValue = ocrService.ReadCurrentValue(checkRoi);
-                            if (currentValue == -1)
-                            {
-                                continue;
-                            }
-
-                            if (currentValue != startValue)
-                            {
-                                //Console.WriteLine($"[INFO] 골드 변동 감지: {startValue} -> {currentValue}");
-                                previousValue = currentValue;
-                                valueChanged = true;
-
-                                var killTime = DateTime.Now - bossStartTime;
-                                OnBossKilled(bossName, killTime);
-                                break;
-                            }
-                            Thread.Sleep(500);
+                            //log("보스소환 반복문 종료. 토큰문제");
+                            return;
                         }
-                        if (!valueChanged)
+
+                        if (!bossesInZone.Contains(bossName))
                         {
-                            if (token.IsCancellationRequested) return;
-                            log("로그[WARNING] 5분 동안 골드 변동이 없어 다음 보스를 찾습니다");
+                            log("보스존 체크 실패");
+                            continue;
                         }
-                        break;
+
+                        var bossConfigs = BossConfigManager.GetBossConfigs();
+                        if (bossConfigs.ContainsKey(bossName) && IsBossMatched(bossConfigs[bossName])) // 이미지 비교함수 추가.
+                        {
+                            //Console.WriteLine($"[INFO] {bossName} 활성화됨. 소환");
+                            SummonBoss(bossName);
+
+                            int startValue = previousValue;
+                            DateTime bossStartTime = DateTime.Now;
+                            bool valueChanged = false;
+
+                            while ((DateTime.Now - bossStartTime).TotalSeconds < 300)
+                            {
+                                if (token.IsCancellationRequested) return;
+                                int currentValue = ocrService.ReadCurrentValue(checkRoi);
+                                if (currentValue == -1)
+                                {
+                                    continue;
+                                }
+
+                                if (currentValue != startValue)
+                                {
+                                    Console.WriteLine($"[INFO] 골드 변동 감지: {startValue} -> {currentValue}");
+                                    previousValue = currentValue;
+                                    valueChanged = true;
+
+                                    var killTime = DateTime.Now - bossStartTime;
+                                    OnBossKilled(bossName, killTime);
+                                    break;
+                                }
+                                Thread.Sleep(500);
+                            }
+                            if (!valueChanged)
+                            {
+                                if (token.IsCancellationRequested) return;
+                                log("로그[WARNING] 5분 동안 골드 변동이 없어 다음 보스를 찾습니다");
+                            }
+                            break;
+                        }
+                        //Console.WriteLine($"[MEM] {GC.GetTotalMemory(false) / 1024 / 1024} MB");
                     }
-                    //Console.WriteLine($"[MEM] {GC.GetTotalMemory(false) / 1024 / 1024} MB");
+                    Thread.Sleep(500);
                 }
-                Thread.Sleep(500);
+                catch (Exception ex)
+                {
+                    log($"[ERROR] 보스 소환 중 예외 발생: {ex.Message}");
+                    log($"[ERROR] 스택 트레이스: {ex.StackTrace}");
+                    break; // 예외 발생 시 반복문 종료
+                }
             }
         }
         private void SummonBoss(string bossKey)
         {
-            Keys key = GetBossKey(bossKey);
+            var bossConfigs = BossConfigManager.GetBossConfigs();
+            Keys key = GetBossKey(bossKey, bossConfigs);
             //Console.WriteLine($"[INFO] {bossKey} 소환 - {key}");
 
             InputHelper.SendKey(key.ToString());
@@ -229,7 +256,7 @@ namespace epicro.Logic
                 {
                     if (texture == null)
                     {
-                        log("[WARNING] Texture 복사 실패 (LatestFrameTexture가 null)");
+                        //log("[WARNING] Texture 복사 실패 (LatestFrameTexture가 null)");
                         return false;
                     }
 
@@ -247,13 +274,14 @@ namespace epicro.Logic
             }
             catch (Exception ex)
             {
-                //log($"[ERROR] 보스 매칭 중 예외 발생: {ex.Message}");
+                log($"[ERROR] 보스 매칭 중 예외 발생: {ex.Message}");
                 return false;
             }
         }
         // 보스 키 매핑
-        private Keys GetBossKey(string bossName)
+        private Keys GetBossKey(string bossName, Dictionary<string, BossConfig> bossConfigs)
         {
+
             if (bossConfigs.ContainsKey(bossName))
             {
                 // 보스의 'Key' 값(예: Q, W, E 등)을 반환
@@ -275,6 +303,7 @@ namespace epicro.Logic
                 boss.AddKill(killTime);
             });
 
+            var bossConfigs = BossConfigManager.GetBossConfigs();
             if (bossConfigs.TryGetValue(bossName, out var config))
             {
                 totalWood += config.Tree;
@@ -300,6 +329,11 @@ namespace epicro.Logic
                 });
             };
             elapsedTimer.Start();
+        }
+
+        public void RefreshOcrSettings()
+        {
+            ocrService?.RefreshFilterSettings();
         }
         private Rectangle ParseROI(string roiValue)
         {

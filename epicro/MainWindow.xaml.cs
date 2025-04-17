@@ -49,6 +49,7 @@ using epicro.Logic;
 using epicro.Models;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Reflection;
 
 
 namespace epicro
@@ -69,6 +70,7 @@ namespace epicro
 
         public static BasicCapture backgroundCapture;
         private OcrService ocrService;
+        private BeltMacro beltMacro;
         public static WindowInfo TargetWindow { get; private set; }
         private System.Timers.Timer ocrTimer;
         public static TesseractEngine ocrEngine;
@@ -106,8 +108,10 @@ namespace epicro
             InitBossSummoner();
             InitBossStats();
             this.DataContext = this;
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            var shortVer = $"{version.Major}.{version.Minor}";
+            this.Title = $"epicro v{shortVer}";
 #if DEBUG
-            // Force graphicscapture.dll to load.
 
 #endif
         }
@@ -117,10 +121,10 @@ namespace epicro
         }
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            string hero = Properties.Settings.Default.HeroNum;
-            string bag = Properties.Settings.Default.BagNum;
+            int hero = Properties.Settings.Default.HeroNum;
+            int bag = Properties.Settings.Default.BagNum;
             string beltNum = Properties.Settings.Default.BeltNum;
-            string beltSpeed = Properties.Settings.Default.BeltSpeed;
+            double beltSpeed = Properties.Settings.Default.BeltSpeed;
 
             // 🔹 보스존 복원
             foreach (ComboBoxItem item in cbb_BossZone.Items)
@@ -144,6 +148,22 @@ namespace epicro
             cb_save.IsChecked = Properties.Settings.Default.SaveEnabled;
             cb_pickup.IsChecked = Properties.Settings.Default.PickupEnabled;
             cb_heroselect.IsChecked = Properties.Settings.Default.HeroSelectEnabled;
+
+            // 필터 설정을 Properties.Settings.Default에서 가져옴
+            var textColors = new List<Tuple<System.Drawing.Color, int>>();
+
+            // 각 설정 값이 비어있지 않으면 리스트에 추가
+            if (!string.IsNullOrEmpty(Properties.Settings.Default.TextColor1))
+                textColors.Add(new Tuple<System.Drawing.Color, int>(ColorTranslator.FromHtml(Properties.Settings.Default.TextColor1), Properties.Settings.Default.TextRange1));
+            if (!string.IsNullOrEmpty(Properties.Settings.Default.TextColor2))
+                textColors.Add(new Tuple<System.Drawing.Color, int>(ColorTranslator.FromHtml(Properties.Settings.Default.TextColor2), Properties.Settings.Default.TextRange2));
+            if (!string.IsNullOrEmpty(Properties.Settings.Default.TextColor3))
+                textColors.Add(new Tuple<System.Drawing.Color, int>(ColorTranslator.FromHtml(Properties.Settings.Default.TextColor3), Properties.Settings.Default.TextRange3));
+
+            // 배경 색상도 설정
+            var backgroundColor = string.IsNullOrEmpty(Properties.Settings.Default.BackgroundColor)
+                ? null
+                : new Tuple<System.Drawing.Color, int>(ColorTranslator.FromHtml(Properties.Settings.Default.BackgroundColor), Properties.Settings.Default.BackgroundRange);
 
             AppendLog("에피크로오오오오오");
             //Debug.WriteLine($"불러온 설정값 - 영웅: {hero}, 창고: {bag}, 벨트번호: {beltNum}, 속도: {beltSpeed}");
@@ -197,6 +217,11 @@ namespace epicro
             if (summoner != null)
             {
                 summoner.Stop();  // 내부적으로 isRunning = false, CancellationToken.Cancel()
+            }
+            if(beltMacro != null)
+            {
+                beltMacro.StopMacro(); // 매크로 중지
+                beltMacro = null; // BeltMacro 객체 해제
             }
 
             if (backgroundCapture != null)
@@ -288,7 +313,7 @@ namespace epicro
                     var item = CaptureHelper.CreateItemForWindow(TargetWindow.Handle);
                     backgroundCapture = new BasicCapture(d3dDevice, item);
                     backgroundCapture.StartCapture();
-
+                    AppendLog($"창 선택됨: {process.ToString()}");
                     Debug.WriteLine("백그라운드 캡처 시작됨");
                     //StartHwndCapture(hwnd);
                 }
@@ -357,6 +382,7 @@ namespace epicro
             {
                 var processesWithWindows = from p in Process.GetProcesses()
                                            where !string.IsNullOrWhiteSpace(p.MainWindowTitle)
+                                           && p.MainWindowTitle.ToLower().Contains("warcraft")
                                            && WindowEnumerationHelper.IsWindowValidForCapture(p.MainWindowHandle)
                                            select new WindowInfo
                                            {
@@ -458,6 +484,8 @@ namespace epicro
                 summoner.BossZone = selectedItem.Content.ToString();
             }
 
+            summoner.RefreshOcrSettings();
+
             summoner.BossOrder = txt_BossOrder.Text;
 
             if (rb_Gold.IsChecked == true)
@@ -492,6 +520,78 @@ namespace epicro
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
+        private void btnBeltSet_Click(object sender, RoutedEventArgs e)
+        {
+            if (TargetWindow == null)
+            {
+                MessageBox.Show("먼저 캡처할 창을 선택하세요.");
+                return;
+            }
+
+            var beltSetting = new BeltSetting();
+            beltSetting.ShowDialog();
+        }
+
+        private void btnBeltStart_Click(object sender, RoutedEventArgs e)
+        {
+            Properties.Settings.Default.Reload(); // 디스크에서 최신 설정 불러오기
+            
+            if (beltMacro != null)
+            {
+                AppendLog("벨트 매크로가 이미 실행 중입니다.");
+                return;
+            }
+
+            beltMacro = new BeltMacro(AppendLog, TargetWindow.Handle);
+            Properties.Settings.Default.Reload();
+            if (TargetWindow == null)
+            {
+                MessageBox.Show("먼저 캡처할 창을 선택하세요.");
+                return;
+            }
+            beltMacro.StartMacro();
+            AppendLog("벨트 매크로 시작");
+        }
+
+        private void btnBeltStop_Click(object sender, RoutedEventArgs e)
+        {
+            if (beltMacro != null)
+            {
+                beltMacro.StopMacro();
+                beltMacro = null;
+                AppendLog("벨트 매크로 중지됨");
+            }
+            else
+            {
+                AppendLog("벨트 매크로가 실행 중이 아닙니다.");
+            }
+        }
+
+        private void CheckBox_CheckedChanged(object sender, RoutedEventArgs e)
+        {
+            if (sender == cb_save)
+            {
+                Properties.Settings.Default.SaveEnabled = cb_save.IsChecked == true;
+            }
+            else if (sender == cb_pickup)
+            {
+                Properties.Settings.Default.PickupEnabled = cb_pickup.IsChecked == true;
+            }
+            else if (sender == cb_heroselect)
+            {
+                Properties.Settings.Default.HeroSelectEnabled = cb_heroselect.IsChecked == true;
+            }
+
+            Properties.Settings.Default.Save(); // 반드시 저장 호출
+        }
+
+        private void btnItemMix_Click(object sender, RoutedEventArgs e)
+        {
+            var mixWindow = new ItemMixWindow();
+            mixWindow.Owner = this; // 부모 창 지정 (선택 사항)
+            mixWindow.Show();       // 또는 ShowDialog(); 로 모달창으로 열기 가능
         }
     }
 }

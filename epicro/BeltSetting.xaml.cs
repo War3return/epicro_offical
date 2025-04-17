@@ -26,10 +26,10 @@ namespace epicro
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            txt_Hero.Text = Properties.Settings.Default.HeroNum;
-            txt_Bag.Text = Properties.Settings.Default.BagNum;
+            txt_Hero.Text = Properties.Settings.Default.HeroNum.ToString();
+            txt_Bag.Text = Properties.Settings.Default.BagNum.ToString();
             cbb_BeltNum.Text = Properties.Settings.Default.BeltNum;
-            txt_BeltSpeed.Text = Properties.Settings.Default.BeltSpeed;
+            txt_BeltSpeed.Text = Properties.Settings.Default.BeltSpeed.ToString();
         }
 
         private void btn_beltSave_Click(object sender, RoutedEventArgs e)
@@ -51,10 +51,16 @@ namespace epicro
 
         private void BeltSetting_Save()
         {
-            Properties.Settings.Default.HeroNum = txt_Hero.Text;
-            Properties.Settings.Default.BagNum = txt_Bag.Text;
-            Properties.Settings.Default.BeltNum = cbb_BeltNum.Text;
-            Properties.Settings.Default.BeltSpeed = txt_BeltSpeed.Text;
+            if (int.TryParse(txt_Hero.Text, out int heroNum))
+                Properties.Settings.Default.HeroNum = heroNum;
+
+            if (int.TryParse(txt_Bag.Text, out int bagNum))
+                Properties.Settings.Default.BagNum = bagNum;
+
+            Properties.Settings.Default.BeltNum = cbb_BeltNum.Text; // 이것만 string이므로 그대로 저장
+
+            if (double.TryParse(txt_BeltSpeed.Text, out double beltSpeed))
+                Properties.Settings.Default.BeltSpeed = beltSpeed;
             Properties.Settings.Default.Save();
         }
 

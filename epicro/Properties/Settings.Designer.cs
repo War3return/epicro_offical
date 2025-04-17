@@ -85,10 +85,10 @@ namespace epicro.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string HeroNum {
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int HeroNum {
             get {
-                return ((string)(this["HeroNum"]));
+                return ((int)(this["HeroNum"]));
             }
             set {
                 this["HeroNum"] = value;
@@ -97,10 +97,10 @@ namespace epicro.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string BagNum {
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int BagNum {
             get {
-                return ((string)(this["BagNum"]));
+                return ((int)(this["BagNum"]));
             }
             set {
                 this["BagNum"] = value;
@@ -121,10 +121,10 @@ namespace epicro.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string BeltSpeed {
+        [global::System.Configuration.DefaultSettingValueAttribute("0.4")]
+        public double BeltSpeed {
             get {
-                return ((string)(this["BeltSpeed"]));
+                return ((double)(this["BeltSpeed"]));
             }
             set {
                 this["BeltSpeed"] = value;
@@ -224,6 +224,101 @@ namespace epicro.Properties {
             }
             set {
                 this["HeroSelectEnabled"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string TextColor1 {
+            get {
+                return ((string)(this["TextColor1"]));
+            }
+            set {
+                this["TextColor1"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string TextColor2 {
+            get {
+                return ((string)(this["TextColor2"]));
+            }
+            set {
+                this["TextColor2"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string TextColor3 {
+            get {
+                return ((string)(this["TextColor3"]));
+            }
+            set {
+                this["TextColor3"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int TextRange1 {
+            get {
+                return ((int)(this["TextRange1"]));
+            }
+            set {
+                this["TextRange1"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int TextRange2 {
+            get {
+                return ((int)(this["TextRange2"]));
+            }
+            set {
+                this["TextRange2"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int TextRange3 {
+            get {
+                return ((int)(this["TextRange3"]));
+            }
+            set {
+                this["TextRange3"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string BackgroundColor {
+            get {
+                return ((string)(this["BackgroundColor"]));
+            }
+            set {
+                this["BackgroundColor"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public int BackgroundRange {
+            get {
+                return ((int)(this["BackgroundRange"]));
+            }
+            set {
+                this["BackgroundRange"] = value;
             }
         }
     }

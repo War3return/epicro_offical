@@ -154,44 +154,80 @@ namespace CaptureSampleCore
 
             } // Retire the frame.
 
-                swapChain.Present(0, SharpDX.DXGI.PresentFlags.None);
+            swapChain.Present(0, SharpDX.DXGI.PresentFlags.None);
 
-                if (newSize)
-                {
-                    framePool.Recreate(
-                        device,
-                        DirectXPixelFormat.B8G8R8A8UIntNormalized,
-                        2,
-                        lastSize);
-                }
+            if (newSize)
+            {
+                framePool.Recreate(
+                    device,
+                    DirectXPixelFormat.B8G8R8A8UIntNormalized,
+                    2,
+                    lastSize);
+            }
         }
         public Texture2D GetSafeTextureCopy()
         {
-            lock (_textureLock)
+            try
             {
-                if (LatestFrameTexture == null)
+                lock (_textureLock)
                 {
-                    Debug.WriteLine("[DEBUG] LatestFrameTexture is null");
-                    return null;
+                    if (LatestFrameTexture == null)
+                    {
+                        Debug.WriteLine("[DEBUG] LatestFrameTexture is null");
+                        return null;
+                    }
+
+                    if (LatestFrameTexture.IsDisposed)
+                    {
+                        Debug.WriteLine("[DEBUG] LatestFrameTexture is already disposed");
+                        return null;
+                    }
+
+                    Texture2DDescription desc;
+
+                    try
+                    {
+                        desc = LatestFrameTexture.Description;
+                    }
+                    catch(Exception ex) 
+                    {
+                        Debug.WriteLine($"[ERROR] Description 가져오는 중 예외 발생: {ex.Message}");
+                        return null;
+                    }
+
+                    var staging = new Texture2D(d3dDevice, new Texture2DDescription
+                    {
+                        Width = desc.Width,
+                        Height = desc.Height,
+                        Format = desc.Format,
+                        Usage = ResourceUsage.Staging,
+                        CpuAccessFlags = CpuAccessFlags.Read,
+                        BindFlags = BindFlags.None,
+                        MipLevels = 1,
+                        ArraySize = 1,
+                        SampleDescription = new SampleDescription(1, 0),
+                        OptionFlags = ResourceOptionFlags.None
+                    });
+
+                    try
+                    {
+                        d3dDevice.ImmediateContext.CopyResource(LatestFrameTexture, staging);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[ERROR] Texture 복사 중 예외 발생: {ex.Message}");
+                        staging.Dispose();
+                        return null;
+                    }
+
+                    return staging; // ← 안전하게 복사된 텍스처 반환
                 }
+            }
 
-                var desc = LatestFrameTexture.Description;
-                var staging = new Texture2D(d3dDevice, new Texture2DDescription
-                {
-                    Width = desc.Width,
-                    Height = desc.Height,
-                    Format = desc.Format,
-                    Usage = ResourceUsage.Staging,
-                    CpuAccessFlags = CpuAccessFlags.Read,
-                    BindFlags = BindFlags.None,
-                    MipLevels = 1,
-                    ArraySize = 1,
-                    SampleDescription = new SampleDescription(1, 0),
-                    OptionFlags = ResourceOptionFlags.None
-                });
-
-                d3dDevice.ImmediateContext.CopyResource(LatestFrameTexture, staging);
-                return staging; // ← safe copy
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[FATAL] GetSafeTextureCopy 예외 발생: {ex.Message}");
+                return null;
             }
         }
     }

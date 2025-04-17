@@ -25,6 +25,18 @@ namespace epicro
         private int currentIndex = 0;
         private string settingsPrefix;
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        [DllImport("user32.dll")]
+        public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
         public ROIWindow(BitmapSource bitmapSource, string[] roiNames, string settingsPrefix)
         {
             InitializeComponent();
@@ -32,6 +44,19 @@ namespace epicro
             this.settingsPrefix = settingsPrefix;
             CapturedImage.Source = bitmapSource;
             RoiInstruction.Text = $"ROI 영역 드래그 - {roiNames[currentIndex]}";
+            PositionWindowToTarget();
+        }
+
+        private void PositionWindowToTarget()
+        {
+            var hwnd = MainWindow.TargetWindow?.Handle ?? IntPtr.Zero;
+            if (hwnd == IntPtr.Zero) return;
+
+            if (GetWindowRect(hwnd, out RECT rect))
+            {
+                this.Left = rect.Left;
+                this.Top = rect.Top;
+            }
         }
 
         private void RoiCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

@@ -17,17 +17,17 @@
     <Setting Name="Roi_A" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="HeroNum" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+    <Setting Name="HeroNum" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
     </Setting>
-    <Setting Name="BagNum" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+    <Setting Name="BagNum" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
     </Setting>
     <Setting Name="BeltNum" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="BeltSpeed" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+    <Setting Name="BeltSpeed" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">0.4</Value>
     </Setting>
     <Setting Name="Roi_Gold" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
@@ -52,6 +52,30 @@
     </Setting>
     <Setting Name="HeroSelectEnabled" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="TextColor1" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="TextColor2" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="TextColor3" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="TextRange1" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="TextRange2" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="TextRange3" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="BackgroundColor" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="BackgroundRange" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)" />
     </Setting>
   </Settings>
 </SettingsFile>

@@ -112,6 +112,28 @@ namespace epicro
         [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr")]
         static extern IntPtr GetWindowLongPtr64(IntPtr hWnd, int nIndex);
 
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool IsIconic(IntPtr hWnd);
+
+        public static bool IsWindowMinimized(IntPtr hWnd)
+        {
+            return IsIconic(hWnd);
+        }
+
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        private const int SW_RESTORE = 9;
+
+        public static void RestoreWindow(IntPtr hWnd)
+        {
+            if (IsWindowMinimized(hWnd))
+            {
+                ShowWindow(hWnd, SW_RESTORE);
+            }
+        }
+
         // This static method is required because Win32 does not support
         // GetWindowLongPtr directly.
         // http://pinvoke.net/default.aspx/user32/GetWindowLong.html

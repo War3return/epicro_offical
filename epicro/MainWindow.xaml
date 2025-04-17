@@ -30,6 +30,7 @@
         xmlns:local="clr-namespace:epicro"
         mc:Ignorable="d"
         Title="epicro" Height="325" Width="720"
+        Icon="/epicro_sub.ico"
         Loaded="Window_Loaded"
         Closing="Window_Closing">
     <Grid>
@@ -57,14 +58,14 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition/>
                             </Grid.ColumnDefinitions>
-                            <Button x:Name="btnBeltStart" Content="시작" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="64" Height="25"/>
-                            <Button x:Name="btnBeltStop" Content="중지" Margin="0,10,0,0" VerticalAlignment="Top" Height="25" HorizontalAlignment="Center" Width="64"/>
-                            <Button x:Name="btnBeltSet" Content="설정" Margin="0,10,10,0" VerticalAlignment="Top" Height="25" HorizontalAlignment="Right" Width="64"/>
+                            <Button x:Name="btnBeltStart" Content="시작" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="64" Height="25" Click="btnBeltStart_Click"/>
+                            <Button x:Name="btnBeltStop" Content="중지" Margin="0,10,0,0" VerticalAlignment="Top" Height="25" HorizontalAlignment="Center" Width="64" Click="btnBeltStop_Click"/>
+                            <Button x:Name="btnBeltSet" Content="설정" Margin="0,10,10,0" VerticalAlignment="Top" Height="25" HorizontalAlignment="Right" Width="64" Click="btnBeltSet_Click"/>
                             <GroupBox Header="온오프" Margin="10,40,129,0" IsEnabled="True" Height="98" VerticalAlignment="Top">
                                 <StackPanel>
-                                    <CheckBox x:Name="cb_save" Content="세이브" Margin="5" IsChecked="False" IsEnabled="True"/>
-                                    <CheckBox x:Name="cb_pickup" Content="범줍" Margin="5" IsChecked="False" IsEnabled="True"/>
-                                    <CheckBox x:Name="cb_heroselect" Content="영웅선택" Margin="5" IsChecked="False" IsEnabled="True"/>
+                                    <CheckBox x:Name="cb_save" Content="세이브" Margin="5" IsChecked="False" IsEnabled="True" Checked="CheckBox_CheckedChanged" Unchecked="CheckBox_CheckedChanged"/>
+                                    <CheckBox x:Name="cb_pickup" Content="범줍" Margin="5" IsChecked="False" IsEnabled="True" Checked="CheckBox_CheckedChanged" Unchecked="CheckBox_CheckedChanged"/>
+                                    <CheckBox x:Name="cb_heroselect" Content="영웅선택" Margin="5" IsChecked="False" IsEnabled="True" Checked="CheckBox_CheckedChanged" Unchecked="CheckBox_CheckedChanged"/>
                                 </StackPanel>
                             </GroupBox>
                         </Grid>
@@ -102,6 +103,11 @@
                             <GroupBox Header="소환순서" Margin="2,89,117,0" Height="49" VerticalAlignment="Top">
                                 <TextBox x:Name="txt_BossOrder" HorizontalAlignment="Left" TextWrapping="Wrap" Width="106"/>
                             </GroupBox>
+                        </Grid>
+                    </TabItem>
+                    <TabItem HorizontalAlignment="Center" Height="20" Header="기타" VerticalAlignment="Top" Width="39" Margin="0,-1,0,0">
+                        <Grid Background="#FFE5E5E5">
+                            <Button x:Name="btnItemMix" Content="조합재료" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Click="btnItemMix_Click"/>
                         </Grid>
                     </TabItem>
                 </TabControl>
