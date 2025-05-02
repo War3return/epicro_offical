@@ -30,7 +30,8 @@
                         <ComboBoxItem Content="키미" />
                         <ComboBoxItem Content="데달" />
                         <ComboBoxItem Content="유기토" />
-                        <ComboBoxItem Content="사신수" />
+                        <ComboBoxItem Content="우타" />
+                        <ComboBoxItem Content="사성수" />
                     </ComboBox>
                 </StackPanel>
                 <StackPanel Grid.Row="1" VerticalAlignment="Top">

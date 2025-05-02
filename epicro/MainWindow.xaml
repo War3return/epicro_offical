@@ -29,7 +29,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:epicro"
         mc:Ignorable="d"
-        Title="epicro" Height="325" Width="720"
+        Title="epicro" Height="325" Width="742"
         Icon="/epicro_sub.ico"
         Loaded="Window_Loaded"
         Closing="Window_Closing">
@@ -44,7 +44,7 @@
                 <RowDefinition />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <StackPanel Margin="10,10,10,10">
+            <StackPanel Margin="10,10,10,69">
                 <ComboBox x:Name="WindowComboBox" Margin="10" SelectionChanged="WindowComboBox_SelectionChanged" DropDownOpened="WindowComboBox_DropDownOpened">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
@@ -97,7 +97,8 @@
                                     <ComboBoxItem Content="키미" />
                                     <ComboBoxItem Content="데달" />
                                     <ComboBoxItem Content="유기토" />
-                                    <ComboBoxItem Content="사신수" />
+                                    <ComboBoxItem Content="우타" />
+                                    <ComboBoxItem Content="사성수" />
                                 </ComboBox>
                             </GroupBox>
                             <GroupBox Header="소환순서" Margin="2,89,117,0" Height="49" VerticalAlignment="Top">
@@ -112,6 +113,7 @@
                     </TabItem>
                 </TabControl>
             </StackPanel>
+            <Label x:Name="memoryLabel" Content="" HorizontalAlignment="Center" Margin="0,245,0,0" VerticalAlignment="Top" Width="264"/>
         </Grid>
 
         <Grid x:Name="ControlsGrid" Margin="10,0,14,0" Grid.Column="1">

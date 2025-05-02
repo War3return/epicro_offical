@@ -65,9 +65,11 @@
     </Compile>
     <Compile Include="Helpers\BossImageHelper.cs" />
     <Compile Include="Helpers\BossMatcher.cs" />
+    <Compile Include="Helpers\ClipboardHelper.cs" />
     <Compile Include="Helpers\InputHelper.cs" />
     <Compile Include="Helpers\OcrService.cs" />
     <Compile Include="Helpers\ParseRoiHelper.cs" />
+    <Compile Include="Helpers\ProcessMemoryWatcher.cs" />
     <Compile Include="ItemMixWindow.xaml.cs">
       <DependentUpon>ItemMixWindow.xaml</DependentUpon>
     </Compile>

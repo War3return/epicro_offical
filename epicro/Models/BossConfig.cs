@@ -70,10 +70,14 @@ namespace epicro.Models
                 { "유기토", new BossConfig("yugito.png", "E", "유기토", GetROI("Roi_E"), 50000) },
                 { "히단이지", new BossConfig("hidaneasy.png", "R", "유기토", GetROI("Roi_R"), 8000) },
 
+                // 우타 보스
+                { "우타", new BossConfig("uta.png", "Q", "우타", GetROI("Roi_Q"), 70000) },
+
                 // 사신수 보스
-                { "현무", new BossConfig("sasinQ.png", "Q", "사신수", GetROI("Roi_Q"), 120000) },
-                { "백호", new BossConfig("sasinW.png", "W", "사신수", GetROI("Roi_W"), 160000) },
-                { "청룡", new BossConfig("sasinE.png", "E", "사신수", GetROI("Roi_E"), 200000) },
+                { "현무", new BossConfig("sasinQ.png", "Q", "사성수", GetROI("Roi_Q"), 120000) },
+                { "백호", new BossConfig("sasinW.png", "W", "사성수", GetROI("Roi_W"), 160000) },
+                { "청룡", new BossConfig("sasinE.png", "E", "사성수", GetROI("Roi_E"), 200000) },
+                { "주작", new BossConfig("sasinR.png", "R", "사성수", GetROI("Roi_R"), 240000) },
             };
             return bossConfigs;
         }
@@ -89,7 +93,8 @@ namespace epicro.Models
                 { "키미", new List<string> { "키미", "오로치", "키미이지" } },
                 { "데달", new List<string> { "가아라", "사소리", "데이다라", "사완변", "데이다라이지" } },
                 { "유기토", new List<string> { "히단", "카쿠즈", "유기토", "히단이지" } },
-                { "사신수", new List<string> { "현무", "백호", "청룡" } },
+                { "우타", new List<string> { "우타" } },
+                { "사성수", new List<string> { "현무", "백호", "청룡", "주작" } },
             };
         }
 

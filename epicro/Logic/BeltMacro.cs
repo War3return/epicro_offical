@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using epicro.Helpers;
+using static System.Runtime.CompilerServices.RuntimeHelpers;
 
 namespace epicro.Logic
 {
@@ -31,6 +33,9 @@ namespace epicro.Logic
 
         [DllImport("user32.dll")]
         static extern void PostMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
+
+        [DllImport("user32.dll")]
+        private static extern short VkKeyScan(char ch);
 
         private const int WM_KEYDOWN = 0x0100;
         private const int WM_KEYUP = 0x0101;
@@ -154,7 +159,7 @@ namespace epicro.Logic
 
                 if (beltNumber != 0)
                 {
-                    SendKey(targetWindow, beltNumber);
+                    SendKeyPost(targetWindow, beltNumber);
                 }
 
                 Thread.Sleep((int)(beltSpeed * 1000));
@@ -235,15 +240,34 @@ namespace epicro.Logic
             SendMessage(hwnd, WM_KEYUP, keyCode, 0);
         }
 
+        private void SendKeyPost(IntPtr hwnd, int keyCode)
+        {
+            PostMessage(hwnd, WM_KEYDOWN, keyCode, 0);
+            Thread.Sleep(50);
+            PostMessage(hwnd, WM_KEYUP, keyCode, 0);
+        }
+
         /// <summary>
         /// 🔹 단일 문자 입력 (한 글자씩)
         /// </summary>
         /// <param name="hwnd">입력할 대상 윈도우 핸들</param>
         /// <param name="ch">입력할 문자</param>
+        /*
         private void SendChar(IntPtr hwnd, char ch)
         {
             PostMessage(hwnd, WM_CHAR, ch, 0);
             Thread.Sleep(50);
+        }
+        */
+
+        private void SendChar(IntPtr hwnd, char ch)
+        {
+            short keyInfo = VkKeyScan(ch);
+            int vk = keyInfo & 0xFF;
+
+            SendMessage(hwnd, WM_KEYDOWN, vk, 0);
+            Thread.Sleep(50);
+            SendMessage(hwnd, WM_KEYUP, vk, 0);
         }
 
         /// <summary>
@@ -257,6 +281,40 @@ namespace epicro.Logic
             {
                 PostMessage(hwnd, WM_CHAR, ch, 0);
                 Thread.Sleep(50);
+            }
+        }
+
+        private void SendKeyVK_Post(IntPtr hwnd, int vk)
+        {
+            PostMessage(hwnd, WM_KEYDOWN, vk, 0);
+            Thread.Sleep(10);
+            PostMessage(hwnd, WM_KEYUP, vk, 0);
+        }
+
+        private void SendStringVK(IntPtr hwnd, string text)
+        {
+            foreach (char ch in text)
+            {
+                short vkCombo = VkKeyScan(ch);
+                int vk = vkCombo & 0xFF;
+                int shift = (vkCombo >> 8) & 0xFF;
+
+                // Shift 처리
+                if ((shift & 1) != 0) // 1 = Shift 플래그
+                {
+                    PostMessage(hwnd, WM_KEYDOWN, (int)Keys.ShiftKey, 0);
+                    Thread.Sleep(5);
+                }
+
+                PostMessage(hwnd, WM_KEYDOWN, vk, 0);
+                Thread.Sleep(10);
+                PostMessage(hwnd, WM_KEYUP, vk, 0);
+
+                if ((shift & 1) != 0)
+                {
+                    Thread.Sleep(5);
+                    PostMessage(hwnd, WM_KEYUP, (int)Keys.ShiftKey, 0);
+                }
             }
         }
     }

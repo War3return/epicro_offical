@@ -139,6 +139,19 @@ namespace epicro.Models
                 { "재공벨", new ItemMixConfig("벨트", "화심", "스사", "백사비늘") },
                 { "재지벨", new ItemMixConfig("벨트", "베히창", "정수","육문") },
 
+                // 보구함
+                { "보구함 1강", new ItemMixConfig("보구함", "스사", "백사비늘") },
+                { "보구함 2강", new ItemMixConfig("보구함", "스사", "백사비늘") },
+                { "보구함 3강", new ItemMixConfig("보구함", "스사", "백사비늘") },
+                { "보구함 4강", new ItemMixConfig("보구함", "스사", "백사비늘") },
+                { "보구함 5강", new ItemMixConfig("보구함", "스사", "백사비늘") },
+                { "보구함 6강", new ItemMixConfig("보구함", "육문") },
+                { "보구함 7강", new ItemMixConfig("보구함", "육문") },
+                { "보구함 8강", new ItemMixConfig("보구함", "대심", "화심") },
+                { "보구함 9강", new ItemMixConfig("보구함", "대심", "화심") },
+                { "보구함 10강", new ItemMixConfig("보구함", "베히창", "정수") },
+                { "보구함 11강", new ItemMixConfig("보구함", "베히창", "정수") },
+
             };
             return ItemMixconfigs;
         }

@@ -325,7 +325,7 @@ namespace epicro.Logic
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
                     var mainWindow = (MainWindow)System.Windows.Application.Current.MainWindow;
-                    mainWindow.txtElapsedTime.Text = $"실행 시간: {elapsed:hh\\:mm}";
+                    mainWindow.txtElapsedTime.Text = $"실행 시간: {elapsed:d\\:hh\\:mm}";
                 });
             };
             elapsedTimer.Start();

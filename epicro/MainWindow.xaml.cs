@@ -67,6 +67,7 @@ namespace epicro
         private BasicSampleApplication sample;
         private ObservableCollection<WindowInfo> processes;
         private BossSummonerWpf summoner;
+        private ProcessMemoryWatcher processWatcher;
 
         public static BasicCapture backgroundCapture;
         private OcrService ocrService;
@@ -165,7 +166,7 @@ namespace epicro
                 ? null
                 : new Tuple<System.Drawing.Color, int>(ColorTranslator.FromHtml(Properties.Settings.Default.BackgroundColor), Properties.Settings.Default.BackgroundRange);
 
-            AppendLog("에피크로오오오오오");
+            AppendLog("에피크로 로딩 완료");
             //Debug.WriteLine($"불러온 설정값 - 영웅: {hero}, 창고: {bag}, 벨트번호: {beltNum}, 속도: {beltSpeed}");
 
             LoadRoiAreas();
@@ -218,7 +219,7 @@ namespace epicro
             {
                 summoner.Stop();  // 내부적으로 isRunning = false, CancellationToken.Cancel()
             }
-            if(beltMacro != null)
+            if (beltMacro != null)
             {
                 beltMacro.StopMacro(); // 매크로 중지
                 beltMacro = null; // BeltMacro 객체 해제
@@ -231,6 +232,8 @@ namespace epicro
                 backgroundCapture = null;
                 Debug.WriteLine("이전 백그라운드 캡처 해제 완료");
             }
+
+            processWatcher?.Stop();
         }
         private void UpdateWoodStatus(int totalWood, double woodPerHour)
         {
@@ -314,6 +317,16 @@ namespace epicro
                     backgroundCapture = new BasicCapture(d3dDevice, item);
                     backgroundCapture.StartCapture();
                     AppendLog($"창 선택됨: {process.ToString()}");
+
+                    if (processWatcher != null)
+                    {
+                        processWatcher.Stop(); // 이전 감시 종료
+                        processWatcher = null;
+                    }
+
+                    processWatcher = new ProcessMemoryWatcher(Process.GetProcessById(process.ProcessId), UpdateMemoryLabel);
+                    processWatcher.Start();
+
                     Debug.WriteLine("백그라운드 캡처 시작됨");
                     //StartHwndCapture(hwnd);
                 }
@@ -592,6 +605,14 @@ namespace epicro
             var mixWindow = new ItemMixWindow();
             mixWindow.Owner = this; // 부모 창 지정 (선택 사항)
             mixWindow.Show();       // 또는 ShowDialog(); 로 모달창으로 열기 가능
+        }
+
+        public void UpdateMemoryLabel(string text)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                memoryLabel.Content = text;
+            });
         }
     }
 }
