@@ -170,10 +170,16 @@ namespace Composition.WindowsRuntimeHelpers
 
                 var bitmap = new SoftwareBitmap(BitmapPixelFormat.Bgra8, desc.Width, desc.Height, BitmapAlphaMode.Premultiplied);
 
-                // Buffer로 변환
-                var length = desc.Width * desc.Height * 4;
+                // RowPitch 패딩을 고려하여 행 단위로 복사
+                int dstStride = desc.Width * 4;
+                int srcRowPitch = dataBox.RowPitch;
+                int length = dstStride * desc.Height;
                 byte[] buffer = new byte[length];
-                Marshal.Copy(dataBox.DataPointer, buffer, 0, length);
+
+                for (int y = 0; y < desc.Height; y++)
+                {
+                    Marshal.Copy(dataBox.DataPointer + y * srcRowPitch, buffer, y * dstStride, dstStride);
+                }
 
                 // IBuffer로 변환
                 var ibuffer = WindowsRuntimeBufferExtensions.AsBuffer(buffer, 0, length);
@@ -213,15 +219,29 @@ namespace Composition.WindowsRuntimeHelpers
 
                 int width = desc.Width;
                 int height = desc.Height;
-                int stride = dataBox.RowPitch; // 중요! 실제 stride 사용
+                int srcRowPitch = dataBox.RowPitch;
+                int dstStride = width * 4;
 
-                // 새 Bitmap 생성
-                var bitmap = new Bitmap(width, height, stride, PixelFormat.Format32bppArgb, dataBox.DataPointer);
+                // GPU 메모리를 해제하기 전에 관리 메모리로 행 단위 복사
+                // (RowPitch에 패딩이 포함될 수 있으므로 행별로 복사)
+                byte[] buffer = new byte[dstStride * height];
+                for (int y = 0; y < height; y++)
+                {
+                    Marshal.Copy(dataBox.DataPointer + y * srcRowPitch, buffer, y * dstStride, dstStride);
+                }
 
                 device.ImmediateContext.UnmapSubresource(staging, 0);
 
-                // Bitmap 복사본 생성 (원본 포인터는 GPU 메모리이므로 해제 전 안전하게 복사)
-                return new Bitmap(bitmap);
+                // 관리 메모리에서 Bitmap 생성 (GPU 메모리 해제 후에도 안전)
+                var bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+                var bmpData = bitmap.LockBits(
+                    new Rectangle(0, 0, width, height),
+                    ImageLockMode.WriteOnly,
+                    PixelFormat.Format32bppArgb);
+                Marshal.Copy(buffer, 0, bmpData.Scan0, buffer.Length);
+                bitmap.UnlockBits(bmpData);
+
+                return bitmap;
             }
         }
     }

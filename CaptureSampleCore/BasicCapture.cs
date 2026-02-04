@@ -87,6 +87,16 @@ namespace CaptureSampleCore
             session = framePool.CreateCaptureSession(i);
             lastSize = i.Size;
 
+            // Windows 11 캡처 테두리 제거 (Windows 10 2104+ 지원)
+            try
+            {
+                session.IsBorderRequired = false;
+            }
+            catch
+            {
+                // 구버전 Windows에서는 이 속성이 없을 수 있으므로 무시
+            }
+
             framePool.FrameArrived += OnFrameArrived;
         }
 

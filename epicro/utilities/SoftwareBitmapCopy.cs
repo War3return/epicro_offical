@@ -31,6 +31,16 @@ namespace epicro.Utilites
 
             var session = framePool.CreateCaptureSession(item);
 
+            // Windows 11 캡처 테두리 제거
+            try
+            {
+                session.IsBorderRequired = false;
+            }
+            catch
+            {
+                // 구버전 Windows에서는 이 속성이 없을 수 있으므로 무시
+            }
+
             TaskCompletionSource<BitmapSource> tcs = new TaskCompletionSource<BitmapSource>();
 
             framePool.FrameArrived += (s, e) =>
@@ -91,8 +101,6 @@ namespace epicro.Utilites
                         dataStream.Position = y * stride;
                         dataStream.WriteRange(srcPtr, stride);
                     }
-
-                    device.ImmediateContext.UnmapSubresource(texture, 0);
 
                     device.ImmediateContext.UnmapSubresource(stagingTexture, 0);
 
