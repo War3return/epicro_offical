@@ -97,7 +97,14 @@ namespace epicro
         [DllImport("user32.dll")]
         static extern uint GetWindowLong(IntPtr hWnd, int nIndex);
 
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool IsWindow(IntPtr hWnd);
+
         const int GWL_STYLE = -16;
+
+        // 창 모니터링 타이머
+        private DispatcherTimer windowMonitorTimer;
 
         public MainWindow()
         {
@@ -107,6 +114,7 @@ namespace epicro
             ocrEngine = new TesseractEngine(tessPath, "eng", EngineMode.Default);
             InitBossSummoner();
             InitBossStats();
+            InitWindowMonitor();
             this.DataContext = this;
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             var shortVer = $"{version.Major}.{version.Minor}";
@@ -118,6 +126,90 @@ namespace epicro
         private void InitBossSummoner()
         {
             summoner = new BossSummonerWpf(AppendLog, FilteredBossStatsList, UpdateWoodStatus);
+        }
+
+        private void InitWindowMonitor()
+        {
+            windowMonitorTimer = new DispatcherTimer();
+            windowMonitorTimer.Interval = TimeSpan.FromSeconds(2); // 2초마다 확인
+            windowMonitorTimer.Tick += WindowMonitorTimer_Tick;
+        }
+
+        private void StartWindowMonitor()
+        {
+            if (windowMonitorTimer != null && !windowMonitorTimer.IsEnabled)
+            {
+                windowMonitorTimer.Start();
+                Debug.WriteLine("창 모니터링 시작");
+            }
+        }
+
+        private void StopWindowMonitor()
+        {
+            if (windowMonitorTimer != null && windowMonitorTimer.IsEnabled)
+            {
+                windowMonitorTimer.Stop();
+                Debug.WriteLine("창 모니터링 중지");
+            }
+        }
+
+        private void WindowMonitorTimer_Tick(object sender, EventArgs e)
+        {
+            if (TargetWindow == null)
+            {
+                StopWindowMonitor();
+                return;
+            }
+
+            // 창 핸들이 유효한지 확인
+            if (!IsWindow(TargetWindow.Handle))
+            {
+                OnTargetWindowClosed();
+            }
+        }
+
+        private void OnTargetWindowClosed()
+        {
+            string windowTitle = TargetWindow?.Title ?? "알 수 없음";
+            AppendLog($"[경고] '{windowTitle}' 창이 종료되었습니다!");
+
+            // 실행 중인 매크로 모두 중지
+            bool macroWasRunning = false;
+
+            if (summoner != null)
+            {
+                summoner.Stop();
+                macroWasRunning = true;
+                AppendLog("[자동중지] 보스 소환 매크로 중지됨");
+            }
+
+            if (beltMacro != null)
+            {
+                beltMacro.StopMacro();
+                beltMacro = null;
+                macroWasRunning = true;
+                AppendLog("[자동중지] 벨트 매크로 중지됨");
+            }
+
+            // 백그라운드 캡처 정리
+            if (backgroundCapture != null)
+            {
+                backgroundCapture.StopCapture();
+                backgroundCapture.Dispose();
+                backgroundCapture = null;
+            }
+
+            // 창 선택 초기화
+            TargetWindow = null;
+            WindowComboBox.SelectedIndex = -1;
+
+            // 모니터링 중지
+            StopWindowMonitor();
+
+            if (macroWasRunning)
+            {
+                AppendLog("[안내] 게임을 다시 실행한 후 창을 다시 선택하세요.");
+            }
         }
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
@@ -191,6 +283,9 @@ namespace epicro
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            // 창 모니터링 중지
+            StopWindowMonitor();
+
             // 🔸 보스존 저장
             if (cbb_BossZone.SelectedItem is ComboBoxItem selectedZone)
             {
@@ -315,6 +410,9 @@ namespace epicro
                     backgroundCapture.StartCapture();
                     AppendLog($"창 선택됨: {process.ToString()}");
                     Debug.WriteLine("백그라운드 캡처 시작됨");
+
+                    // 창 모니터링 시작
+                    StartWindowMonitor();
                     //StartHwndCapture(hwnd);
                 }
                 catch (Exception)
