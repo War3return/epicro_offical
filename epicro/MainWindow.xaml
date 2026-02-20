@@ -45,13 +45,20 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <StackPanel Margin="10,10,10,10">
-                <ComboBox x:Name="WindowComboBox" Margin="10" SelectionChanged="WindowComboBox_SelectionChanged" DropDownOpened="WindowComboBox_DropDownOpened">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Title}" />
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ComboBox x:Name="WindowComboBox" Grid.Column="0" SelectionChanged="WindowComboBox_SelectionChanged" DropDownOpened="WindowComboBox_DropDownOpened">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Title}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button x:Name="btnReset" Content="리셋" Grid.Column="1" Width="40" Margin="5,0,0,0" Click="btnReset_Click" ToolTip="같은 이름의 창 다시 잡기"/>
+                </Grid>
                 <TabControl Width="240" Height="180">
                     <TabItem Header="벨트">
                         <Grid Background="#FFE5E5E5" Height="150">

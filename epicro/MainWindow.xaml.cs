@@ -593,5 +593,57 @@ namespace epicro
             mixWindow.Owner = this; // 부모 창 지정 (선택 사항)
             mixWindow.Show();       // 또는 ShowDialog(); 로 모달창으로 열기 가능
         }
+
+        private void btnReset_Click(object sender, RoutedEventArgs e)
+        {
+            if (TargetWindow == null)
+            {
+                MessageBox.Show("먼저 캡처할 창을 선택하세요.");
+                return;
+            }
+
+            // 현재 선택된 창 제목 저장
+            string currentTitle = TargetWindow.Title;
+            AppendLog($"[리셋] '{currentTitle}' 창 다시 잡기 시도...");
+
+            // 기존 캡처 정리
+            if (backgroundCapture != null)
+            {
+                backgroundCapture.StopCapture();
+                backgroundCapture.Dispose();
+                backgroundCapture = null;
+            }
+
+            // 창 목록 새로고침
+            InitWindowList();
+
+            // 같은 제목을 가진 창 찾기
+            var matchingWindow = processes.FirstOrDefault(w => w.Title == currentTitle);
+
+            if (matchingWindow != null)
+            {
+                // 찾은 창 선택 (SelectionChanged 이벤트가 자동으로 캡처 시작)
+                WindowComboBox.SelectedItem = matchingWindow;
+                AppendLog($"[리셋] '{currentTitle}' 창 다시 잡기 성공");
+            }
+            else
+            {
+                // 같은 제목이 없으면 제목에 포함된 창 찾기
+                matchingWindow = processes.FirstOrDefault(w => w.Title.Contains(currentTitle) || currentTitle.Contains(w.Title));
+
+                if (matchingWindow != null)
+                {
+                    WindowComboBox.SelectedItem = matchingWindow;
+                    AppendLog($"[리셋] 유사한 창 '{matchingWindow.Title}' 잡기 성공");
+                }
+                else
+                {
+                    TargetWindow = null;
+                    WindowComboBox.SelectedIndex = -1;
+                    AppendLog($"[리셋] '{currentTitle}' 창을 찾을 수 없습니다.");
+                    MessageBox.Show($"'{currentTitle}' 창을 찾을 수 없습니다.\n게임이 실행 중인지 확인하세요.", "창 찾기 실패");
+                }
+            }
+        }
     }
 }
