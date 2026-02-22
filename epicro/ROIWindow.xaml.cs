@@ -87,11 +87,20 @@ namespace epicro
 
         private void RoiCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
+            // Canvas는 WPF 논리 픽셀 좌표를 반환하지만,
+            // 캡처 비트맵은 물리 픽셀 기준이므로 비율로 변환해야 함.
+            // scaleX = 비트맵 물리 픽셀 너비 / 캔버스 논리 픽셀 너비
+            var bitmapSource = CapturedImage.Source as BitmapSource;
+            double scaleX = (bitmapSource != null && RoiCanvas.ActualWidth > 0)
+                ? bitmapSource.PixelWidth / RoiCanvas.ActualWidth : 1.0;
+            double scaleY = (bitmapSource != null && RoiCanvas.ActualHeight > 0)
+                ? bitmapSource.PixelHeight / RoiCanvas.ActualHeight : 1.0;
+
             var rect = new Int32Rect(
-                (int)Canvas.GetLeft(RoiRectangle),
-                (int)Canvas.GetTop(RoiRectangle),
-                (int)RoiRectangle.Width,
-                (int)RoiRectangle.Height);
+                (int)(Canvas.GetLeft(RoiRectangle) * scaleX),
+                (int)(Canvas.GetTop(RoiRectangle) * scaleY),
+                (int)(RoiRectangle.Width * scaleX),
+                (int)(RoiRectangle.Height * scaleY));
 
             RoiAreas.Add(rect);
             RoiRectangle.Visibility = Visibility.Collapsed;
