@@ -73,6 +73,7 @@ namespace epicro
         private OcrService ocrService;
         private BeltMacro beltMacro;
         public static WindowInfo TargetWindow { get; private set; }
+        private string _lastWindowTitle;
         private System.Timers.Timer ocrTimer;
         public static TesseractEngine ocrEngine;
         private bool isOcrRunning = false;
@@ -233,6 +234,12 @@ namespace epicro
                 Debug.WriteLine("이전 백그라운드 캡처 해제 완료");
             }
 
+            if (TargetWindow != null)
+            {
+                TargetWindow.ProcessExited -= OnTargetWindowExited;
+                TargetWindow.StopMonitoring();
+            }
+
             processWatcher?.Stop();
         }
         private void UpdateWoodStatus(int totalWood, double woodPerHour)
@@ -298,7 +305,15 @@ namespace epicro
 
             if (process != null)
             {
+                // 이전 TargetWindow 이벤트 구독 해제
+                if (TargetWindow != null)
+                {
+                    TargetWindow.ProcessExited -= OnTargetWindowExited;
+                    TargetWindow.StopMonitoring();
+                }
+
                 TargetWindow = process;
+                _lastWindowTitle = process.Title;
 
                 if (backgroundCapture != null)
                 {
@@ -327,6 +342,10 @@ namespace epicro
                     processWatcher = new ProcessMemoryWatcher(Process.GetProcessById(process.ProcessId), UpdateMemoryLabel);
                     processWatcher.Start();
 
+                    // 프로세스 종료 감지 시작
+                    TargetWindow.ProcessExited += OnTargetWindowExited;
+                    TargetWindow.StartExitAndRestartMonitoring();
+
                     Debug.WriteLine("백그라운드 캡처 시작됨");
                     //StartHwndCapture(hwnd);
                 }
@@ -337,6 +356,36 @@ namespace epicro
                     comboBox.SelectedIndex = -1;
                 }
             }
+        }
+
+        private void OnTargetWindowExited(object sender, EventArgs e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                AppendLog("워크래프트 창이 종료되었습니다. 실행 중인 매크로를 중지합니다.");
+
+                if (beltMacro != null)
+                {
+                    beltMacro.StopMacro();
+                    beltMacro = null;
+                    AppendLog("벨트 매크로 중지됨");
+                }
+
+                summoner?.Stop();
+
+                if (backgroundCapture != null)
+                {
+                    backgroundCapture.StopCapture();
+                    backgroundCapture.Dispose();
+                    backgroundCapture = null;
+                }
+
+                processWatcher?.Stop();
+                processWatcher = null;
+
+                TargetWindow = null;
+                memoryLabel.Content = "";
+            });
         }
 
         private void InitComposition(float controlsWidth)
@@ -609,13 +658,13 @@ namespace epicro
 
         private void btnReset_Click(object sender, RoutedEventArgs e)
         {
-            if (TargetWindow == null)
+            string targetTitle = TargetWindow?.Title ?? _lastWindowTitle;
+
+            if (string.IsNullOrEmpty(targetTitle))
             {
                 MessageBox.Show("먼저 캡처할 창을 선택하세요.");
                 return;
             }
-
-            string targetTitle = TargetWindow.Title;
 
             InitWindowList();
 
