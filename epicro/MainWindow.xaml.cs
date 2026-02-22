@@ -487,17 +487,17 @@ namespace epicro
 
             if (bitmap != null)
             {
-                GetClientRect(TargetWindow.Handle, out RECT rect);
-                var style = GetWindowLong(TargetWindow.Handle, GWL_STYLE);
-                AdjustWindowRect(ref rect, style, false);
-
-                var clientWidth = rect.right - rect.left;
-                var clientHeight = rect.bottom - rect.top;
+                // 비트맵은 Windows.Graphics.Capture가 반환한 물리 픽셀 기준이고,
+                // WPF 창 Width/Height는 논리 픽셀 기준이므로 DPI 배율로 나눠야 함.
+                // 이렇게 하면 ROI 창이 게임 창과 동일한 화면 크기로 열린다.
+                var dpiSource = PresentationSource.FromVisual(this);
+                double dpiX = dpiSource?.CompositionTarget.TransformToDevice.M11 ?? 1.0;
+                double dpiY = dpiSource?.CompositionTarget.TransformToDevice.M22 ?? 1.0;
 
                 var roiWindow = new ROIWindow(bitmap, new[] { "Q", "W", "E", "R", "A" }, "Roi")
                 {
-                    Width = clientWidth,
-                    Height = clientHeight
+                    Width = bitmap.PixelWidth / dpiX,
+                    Height = bitmap.PixelHeight / dpiY
                 };
 
                 if (roiWindow.ShowDialog() == true)
