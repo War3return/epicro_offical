@@ -73,6 +73,7 @@ namespace epicro
         private OcrService ocrService;
         private BeltMacro beltMacro;
         public static WindowInfo TargetWindow { get; private set; }
+        private string _lastWindowTitle;
         private System.Timers.Timer ocrTimer;
         public static TesseractEngine ocrEngine;
         private bool isOcrRunning = false;
@@ -312,6 +313,7 @@ namespace epicro
                 }
 
                 TargetWindow = process;
+                _lastWindowTitle = process.Title;
 
                 if (backgroundCapture != null)
                 {
@@ -382,7 +384,6 @@ namespace epicro
                 processWatcher = null;
 
                 TargetWindow = null;
-                WindowComboBox.SelectedIndex = -1;
                 memoryLabel.Content = "";
             });
         }
@@ -657,13 +658,13 @@ namespace epicro
 
         private void btnReset_Click(object sender, RoutedEventArgs e)
         {
-            if (TargetWindow == null)
+            string targetTitle = TargetWindow?.Title ?? _lastWindowTitle;
+
+            if (string.IsNullOrEmpty(targetTitle))
             {
                 MessageBox.Show("먼저 캡처할 창을 선택하세요.");
                 return;
             }
-
-            string targetTitle = TargetWindow.Title;
 
             InitWindowList();
 
