@@ -607,6 +607,30 @@ namespace epicro
             mixWindow.Show();       // 또는 ShowDialog(); 로 모달창으로 열기 가능
         }
 
+        private void btnReset_Click(object sender, RoutedEventArgs e)
+        {
+            if (TargetWindow == null)
+            {
+                MessageBox.Show("먼저 캡처할 창을 선택하세요.");
+                return;
+            }
+
+            string targetTitle = TargetWindow.Title;
+
+            InitWindowList();
+
+            var matchingWindow = processes?.FirstOrDefault(w => w.Title == targetTitle);
+            if (matchingWindow != null)
+            {
+                WindowComboBox.SelectedItem = matchingWindow;
+            }
+            else
+            {
+                AppendLog($"같은 이름의 창을 찾을 수 없습니다: {targetTitle}");
+                MessageBox.Show($"'{targetTitle}' 창을 찾을 수 없습니다.");
+            }
+        }
+
         public void UpdateMemoryLabel(string text)
         {
             Dispatcher.Invoke(() =>
