@@ -38,6 +38,7 @@ namespace epicro.Logic
 
         public string BossOrder { get; set; }
         public string BossZone { get; set; }
+        public bool IsRunning => isRunning;
 
         public BossSummonerWpf(Action<string> log, ObservableCollection<BossStats> bossStatsList, Action<int, double> updateWoodCallback)
         {

@@ -112,6 +112,7 @@
                     <TabItem HorizontalAlignment="Center" Height="20" Header="기타" VerticalAlignment="Top" Width="39" Margin="0,-1,0,0">
                         <Grid Background="#FFE5E5E5">
                             <Button x:Name="btnItemMix" Content="조합재료" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Click="btnItemMix_Click"/>
+                            <Button x:Name="btnTelegramSetting" Content="텔레그램" HorizontalAlignment="Left" Margin="10,38,0,0" VerticalAlignment="Top" Click="btnTelegramSetting_Click"/>
                         </Grid>
                     </TabItem>
                 </TabControl>
