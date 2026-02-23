@@ -23,6 +23,7 @@ namespace epicro.Helpers
         private int _lastUpdateId = 0;
 
         public int RegisteredCount => _chatIds.Count;
+        public bool IsEnabled { get; set; } = true;
 
         public TelegramBotService(string savedChatIds, Action<string> log, Func<string> statusProvider)
         {
@@ -54,7 +55,7 @@ namespace epicro.Helpers
 
         public async Task BroadcastAsync(string message)
         {
-            if (string.IsNullOrWhiteSpace(_botToken) || _chatIds.Count == 0) return;
+            if (!IsEnabled || string.IsNullOrWhiteSpace(_botToken) || _chatIds.Count == 0) return;
             var tasks = _chatIds.ToList().Select(id => SendAsync(id, message));
             await Task.WhenAll(tasks);
         }
@@ -115,25 +116,20 @@ namespace epicro.Helpers
             if (cmd.Contains('@'))
                 cmd = cmd.Substring(0, cmd.IndexOf('@'));
 
+            // /chatid 는 누구든 사용 가능 (연동 전 Chat ID 확인용)
+            if (cmd == "/chatid")
+            {
+                await SendAsync(chatId,
+                    $"내 Chat ID: {chatId}\n\n" +
+                    $"이 번호를 에피크로 → 기타 탭 → 텔레그램 설정창에 입력하세요.");
+                return;
+            }
+
+            // 나머지 명령어는 등록된 Chat ID만 사용 가능
+            if (!_chatIds.Contains(chatId)) return;
+
             switch (cmd)
             {
-                case "/start":
-                    _chatIds.Add(chatId);
-                    SaveChatIds();
-                    _log?.Invoke($"[텔레그램] 사용자 등록: {chatId}");
-                    await SendAsync(chatId,
-                        "✅ 알림이 등록되었습니다.\n" +
-                        "워크래프트 창이 종료되면 알림을 보내드립니다.\n\n" +
-                        "/help - 명령어 목록");
-                    break;
-
-                case "/stop":
-                    _chatIds.Remove(chatId);
-                    SaveChatIds();
-                    _log?.Invoke($"[텔레그램] 사용자 해제: {chatId}");
-                    await SendAsync(chatId, "🔕 알림이 해제되었습니다.");
-                    break;
-
                 case "/status":
                     var status = _statusProvider?.Invoke() ?? "상태 정보 없음";
                     await SendAsync(chatId, $"📊 현재 상태\n{status}");
@@ -142,11 +138,23 @@ namespace epicro.Helpers
                 case "/help":
                     await SendAsync(chatId,
                         "📋 명령어 목록\n" +
-                        "/start - 알림 등록\n" +
-                        "/stop - 알림 해제\n" +
+                        "/chatid - 내 Chat ID 확인\n" +
                         "/status - 현재 매크로 상태\n" +
                         "/help - 명령어 목록");
                     break;
+            }
+        }
+
+        public void UpdateChatIds(string commaSeparated)
+        {
+            _chatIds.Clear();
+            if (!string.IsNullOrEmpty(commaSeparated))
+            {
+                foreach (var part in commaSeparated.Split(','))
+                {
+                    if (long.TryParse(part.Trim(), out long id))
+                        _chatIds.Add(id);
+                }
             }
         }
 

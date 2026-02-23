@@ -194,6 +194,7 @@ namespace epicro
             // 텔레그램 봇 서비스 초기화
             var chatIds = Properties.Settings.Default.TelegramChatIds;
             _telegramBotService = new TelegramBotService(chatIds, AppendLog, GetStatusText);
+            _telegramBotService.IsEnabled = Properties.Settings.Default.TelegramEnabled;
             _telegramBotService.StartPolling();
         }
 
