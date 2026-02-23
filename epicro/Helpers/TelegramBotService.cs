@@ -111,29 +111,15 @@ namespace epicro.Helpers
 
         private async Task ProcessMessage(long chatId, string text)
         {
+            // 등록된 Chat ID에서 온 명령어만 처리
+            if (!_chatIds.Contains(chatId)) return;
+
             var cmd = text.Split(' ')[0].ToLower();
             if (cmd.Contains('@'))
                 cmd = cmd.Substring(0, cmd.IndexOf('@'));
 
             switch (cmd)
             {
-                case "/start":
-                    _chatIds.Add(chatId);
-                    SaveChatIds();
-                    _log?.Invoke($"[텔레그램] 사용자 등록: {chatId}");
-                    await SendAsync(chatId,
-                        "✅ 알림이 등록되었습니다.\n" +
-                        "워크래프트 창이 종료되면 알림을 보내드립니다.\n\n" +
-                        "/help - 명령어 목록");
-                    break;
-
-                case "/stop":
-                    _chatIds.Remove(chatId);
-                    SaveChatIds();
-                    _log?.Invoke($"[텔레그램] 사용자 해제: {chatId}");
-                    await SendAsync(chatId, "🔕 알림이 해제되었습니다.");
-                    break;
-
                 case "/status":
                     var status = _statusProvider?.Invoke() ?? "상태 정보 없음";
                     await SendAsync(chatId, $"📊 현재 상태\n{status}");
@@ -142,11 +128,22 @@ namespace epicro.Helpers
                 case "/help":
                     await SendAsync(chatId,
                         "📋 명령어 목록\n" +
-                        "/start - 알림 등록\n" +
-                        "/stop - 알림 해제\n" +
                         "/status - 현재 매크로 상태\n" +
                         "/help - 명령어 목록");
                     break;
+            }
+        }
+
+        public void UpdateChatIds(string commaSeparated)
+        {
+            _chatIds.Clear();
+            if (!string.IsNullOrEmpty(commaSeparated))
+            {
+                foreach (var part in commaSeparated.Split(','))
+                {
+                    if (long.TryParse(part.Trim(), out long id))
+                        _chatIds.Add(id);
+                }
             }
         }
 
