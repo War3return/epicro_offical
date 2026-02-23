@@ -23,6 +23,7 @@ namespace epicro.Helpers
         private int _lastUpdateId = 0;
 
         public int RegisteredCount => _chatIds.Count;
+        public bool IsEnabled { get; set; } = true;
 
         public TelegramBotService(string savedChatIds, Action<string> log, Func<string> statusProvider)
         {
@@ -54,7 +55,7 @@ namespace epicro.Helpers
 
         public async Task BroadcastAsync(string message)
         {
-            if (string.IsNullOrWhiteSpace(_botToken) || _chatIds.Count == 0) return;
+            if (!IsEnabled || string.IsNullOrWhiteSpace(_botToken) || _chatIds.Count == 0) return;
             var tasks = _chatIds.ToList().Select(id => SendAsync(id, message));
             await Task.WhenAll(tasks);
         }
@@ -111,12 +112,21 @@ namespace epicro.Helpers
 
         private async Task ProcessMessage(long chatId, string text)
         {
-            // 등록된 Chat ID에서 온 명령어만 처리
-            if (!_chatIds.Contains(chatId)) return;
-
             var cmd = text.Split(' ')[0].ToLower();
             if (cmd.Contains('@'))
                 cmd = cmd.Substring(0, cmd.IndexOf('@'));
+
+            // /chatid 는 누구든 사용 가능 (연동 전 Chat ID 확인용)
+            if (cmd == "/chatid")
+            {
+                await SendAsync(chatId,
+                    $"내 Chat ID: {chatId}\n\n" +
+                    $"이 번호를 에피크로 → 기타 탭 → 텔레그램 설정창에 입력하세요.");
+                return;
+            }
+
+            // 나머지 명령어는 등록된 Chat ID만 사용 가능
+            if (!_chatIds.Contains(chatId)) return;
 
             switch (cmd)
             {
@@ -128,6 +138,7 @@ namespace epicro.Helpers
                 case "/help":
                     await SendAsync(chatId,
                         "📋 명령어 목록\n" +
+                        "/chatid - 내 Chat ID 확인\n" +
                         "/status - 현재 매크로 상태\n" +
                         "/help - 명령어 목록");
                     break;

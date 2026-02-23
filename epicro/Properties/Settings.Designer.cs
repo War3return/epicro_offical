@@ -333,5 +333,17 @@ namespace epicro.Properties {
                 this["TelegramChatIds"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool TelegramEnabled {
+            get {
+                return ((bool)(this["TelegramEnabled"]));
+            }
+            set {
+                this["TelegramEnabled"] = value;
+            }
+        }
     }
 }
