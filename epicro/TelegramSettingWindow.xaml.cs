@@ -11,15 +11,7 @@ namespace epicro
         {
             InitializeComponent();
             _botService = botService;
-            txt_BotToken.Text = Properties.Settings.Default.TelegramBotToken;
             lbl_UserCount.Content = $"등록된 사용자: {_botService?.RegisteredCount ?? 0}명";
-        }
-
-        private void btnSave_Click(object sender, RoutedEventArgs e)
-        {
-            Properties.Settings.Default.TelegramBotToken = txt_BotToken.Text.Trim();
-            Properties.Settings.Default.Save();
-            MessageBox.Show("저장되었습니다.\n토큰을 변경한 경우 앱을 재시작해야 적용됩니다.", "저장 완료");
         }
 
         private async void btnTest_Click(object sender, RoutedEventArgs e)

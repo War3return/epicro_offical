@@ -24,9 +24,9 @@ namespace epicro.Helpers
 
         public int RegisteredCount => _chatIds.Count;
 
-        public TelegramBotService(string botToken, string savedChatIds, Action<string> log, Func<string> statusProvider)
+        public TelegramBotService(string savedChatIds, Action<string> log, Func<string> statusProvider)
         {
-            _botToken = botToken;
+            _botToken = TelegramConfig.BotToken;
             _log = log;
             _statusProvider = statusProvider;
 

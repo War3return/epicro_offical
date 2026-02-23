@@ -192,9 +192,8 @@ namespace epicro
             // 기존 실시간 송출 제거 → 대신 BackgroundCapture만 시작
 
             // 텔레그램 봇 서비스 초기화
-            var token = Properties.Settings.Default.TelegramBotToken;
             var chatIds = Properties.Settings.Default.TelegramChatIds;
-            _telegramBotService = new TelegramBotService(token, chatIds, AppendLog, GetStatusText);
+            _telegramBotService = new TelegramBotService(chatIds, AppendLog, GetStatusText);
             _telegramBotService.StartPolling();
         }
 

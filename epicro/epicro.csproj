@@ -66,6 +66,7 @@
     </Compile>
     <Compile Include="Helpers\BossImageHelper.cs" />
     <Compile Include="Helpers\TelegramBotService.cs" />
+    <Compile Include="Helpers\TelegramConfig.cs" />
     <Compile Include="TelegramSettingWindow.xaml.cs">
       <DependentUpon>TelegramSettingWindow.xaml</DependentUpon>
     </Compile>
