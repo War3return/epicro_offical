@@ -48,6 +48,7 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Net.Http" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
@@ -64,6 +65,11 @@
       <DependentUpon>BeltSetting.xaml</DependentUpon>
     </Compile>
     <Compile Include="Helpers\BossImageHelper.cs" />
+    <Compile Include="Helpers\TelegramBotService.cs" />
+    <Compile Include="Helpers\TelegramConfig.cs" />
+    <Compile Include="TelegramSettingWindow.xaml.cs">
+      <DependentUpon>TelegramSettingWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Helpers\BossMatcher.cs" />
     <Compile Include="Helpers\ClipboardHelper.cs" />
     <Compile Include="Helpers\InputHelper.cs" />
@@ -121,6 +127,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ROIWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="TelegramSettingWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

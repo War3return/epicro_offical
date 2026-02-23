@@ -77,6 +77,7 @@ namespace epicro
         private System.Timers.Timer ocrTimer;
         public static TesseractEngine ocrEngine;
         private bool isOcrRunning = false;
+        private TelegramBotService _telegramBotService;
 
         public ObservableCollection<BossStats> AllBossStats { get; set; } = new ObservableCollection<BossStats>();
         public ObservableCollection<BossStats> FilteredBossStatsList { get; set; } = new ObservableCollection<BossStats>();
@@ -189,6 +190,20 @@ namespace epicro
             InitWindowList();
             */
             // 기존 실시간 송출 제거 → 대신 BackgroundCapture만 시작
+
+            // 텔레그램 봇 서비스 초기화
+            var chatIds = Properties.Settings.Default.TelegramChatIds;
+            _telegramBotService = new TelegramBotService(chatIds, AppendLog, GetStatusText);
+            _telegramBotService.StartPolling();
+        }
+
+        private string GetStatusText()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"선택된 창: {TargetWindow?.Title ?? "없음"}");
+            sb.AppendLine($"벨트 매크로: {(beltMacro != null ? "실행 중" : "정지")}");
+            sb.AppendLine($"보스 소환기: {(summoner?.IsRunning == true ? "실행 중" : "정지")}");
+            return sb.ToString().TrimEnd();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -241,6 +256,9 @@ namespace epicro
             }
 
             processWatcher?.Stop();
+
+            _telegramBotService?.Stop();
+            _telegramBotService?.Dispose();
         }
         private void UpdateWoodStatus(int totalWood, double woodPerHour)
         {
@@ -360,6 +378,9 @@ namespace epicro
 
         private void OnTargetWindowExited(object sender, EventArgs e)
         {
+            var windowTitle = TargetWindow?.Title ?? "알 수 없는 창";
+            _telegramBotService?.BroadcastAsync($"⚠️ 워크래프트 창이 종료되었습니다.\n창 이름: {windowTitle}\n시각: {DateTime.Now:HH:mm:ss}");
+
             Dispatcher.Invoke(() =>
             {
                 AppendLog("워크래프트 창이 종료되었습니다. 실행 중인 매크로를 중지합니다.");
@@ -654,6 +675,13 @@ namespace epicro
             var mixWindow = new ItemMixWindow();
             mixWindow.Owner = this; // 부모 창 지정 (선택 사항)
             mixWindow.Show();       // 또는 ShowDialog(); 로 모달창으로 열기 가능
+        }
+
+        private void btnTelegramSetting_Click(object sender, RoutedEventArgs e)
+        {
+            var win = new TelegramSettingWindow(_telegramBotService);
+            win.Owner = this;
+            win.ShowDialog();
         }
 
         private void btnReset_Click(object sender, RoutedEventArgs e)

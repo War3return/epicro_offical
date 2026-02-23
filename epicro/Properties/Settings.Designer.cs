@@ -321,5 +321,17 @@ namespace epicro.Properties {
                 this["BackgroundRange"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string TelegramChatIds {
+            get {
+                return ((string)(this["TelegramChatIds"]));
+            }
+            set {
+                this["TelegramChatIds"] = value;
+            }
+        }
     }
 }
