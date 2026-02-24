@@ -2,16 +2,57 @@ import json
 import os
 import time
 import urllib.request
-from datetime import datetime
 
-import boto3
+import psycopg2
+import psycopg2.extras
 
 BOT_TOKEN = os.environ["BOT_TOKEN"]
 ADMIN_CHAT_ID = int(os.environ["ADMIN_CHAT_ID"])
-TABLE_NAME = os.environ.get("TABLE_NAME", "epicro_telegram_users")
+DATABASE_URL = os.environ["DATABASE_URL"]
 
-dynamodb = boto3.resource("dynamodb")
-table = dynamodb.Table(TABLE_NAME)
+
+# ── DB 초기화 ─────────────────────────────────────────────────────────────────
+
+def get_db():
+    return psycopg2.connect(DATABASE_URL)
+
+def init_db():
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    chat_id   BIGINT PRIMARY KEY,
+                    username  TEXT,
+                    joined_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
+        conn.commit()
+    print("[DB] 테이블 준비 완료")
+
+
+# ── DB 조작 ───────────────────────────────────────────────────────────────────
+
+def register_user(chat_id, username):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO users (chat_id, username) VALUES (%s, %s)"
+                " ON CONFLICT (chat_id) DO NOTHING",
+                (chat_id, username or "")
+            )
+        conn.commit()
+
+def unregister_user(chat_id):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM users WHERE chat_id = %s", (chat_id,))
+        conn.commit()
+
+def get_all_users():
+    with get_db() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+            cur.execute("SELECT chat_id, username FROM users ORDER BY joined_at")
+            return cur.fetchall()
 
 
 # ── Telegram API ──────────────────────────────────────────────────────────────
@@ -27,7 +68,6 @@ def send_message(chat_id, text, parse_mode=None):
     )
     urllib.request.urlopen(req, timeout=10)
 
-
 def get_updates(offset=None):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates?timeout=30"
     if offset is not None:
@@ -35,22 +75,6 @@ def get_updates(offset=None):
     req = urllib.request.Request(url)
     resp = urllib.request.urlopen(req, timeout=35)
     return json.loads(resp.read())
-
-
-# ── DynamoDB ──────────────────────────────────────────────────────────────────
-
-def register_user(chat_id, username):
-    table.put_item(Item={
-        "chat_id": str(chat_id),
-        "username": username or "",
-        "registered_at": datetime.utcnow().isoformat(),
-    })
-
-def unregister_user(chat_id):
-    table.delete_item(Key={"chat_id": str(chat_id)})
-
-def get_all_users():
-    return table.scan().get("Items", [])
 
 
 # ── 명령어 처리 ───────────────────────────────────────────────────────────────
@@ -77,10 +101,10 @@ def handle_command(chat_id, username, cmd, full_text):
     elif cmd == "/help":
         send_message(chat_id,
             "📋 명령어 목록\n"
-            "/start - 알림 등록\n"
-            "/stop  - 알림 해제\n"
+            "/start  - 알림 등록\n"
+            "/stop   - 알림 해제\n"
             "/chatid - 내 Chat ID 확인\n"
-            "/help  - 명령어 목록")
+            "/help   - 명령어 목록")
 
     elif chat_id == ADMIN_CHAT_ID:
         handle_admin_command(chat_id, cmd, full_text)
@@ -95,7 +119,7 @@ def handle_admin_command(chat_id, cmd, full_text):
             return
         lines = []
         for u in users[:30]:
-            name = f"@{u['username']}" if u.get("username") else u["chat_id"]
+            name = f"@{u['username']}" if u["username"] else str(u["chat_id"])
             lines.append(f"• {name}")
         text = f"👥 등록된 사용자: {count}명\n\n" + "\n".join(lines)
         if count > 30:
@@ -114,7 +138,7 @@ def handle_admin_command(chat_id, cmd, full_text):
         success, fail = 0, 0
         for user in users:
             try:
-                send_message(int(user["chat_id"]), f"📢 공지\n{msg}")
+                send_message(user["chat_id"], f"📢 공지\n{msg}")
                 success += 1
             except Exception:
                 fail += 1
@@ -127,7 +151,8 @@ def handle_admin_command(chat_id, cmd, full_text):
 # ── Polling 루프 ──────────────────────────────────────────────────────────────
 
 def main():
-    print("[Bot] 시작 (polling 방식)")
+    init_db()
+    print("[Bot] 시작 (polling)")
 
     # 시작 시 쌓인 메시지 건너뜀
     try:
@@ -153,7 +178,7 @@ def main():
                 try:
                     handle_command(chat_id, username, cmd, text)
                 except Exception as e:
-                    print(f"[Error] handle_command: {e}")
+                    print(f"[Error] handle: {e}")
         except Exception as e:
             print(f"[Error] poll: {e}")
             time.sleep(5)
