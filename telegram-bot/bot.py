@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import urllib.request
 from datetime import datetime
 
@@ -27,6 +28,15 @@ def send_message(chat_id, text, parse_mode=None):
     urllib.request.urlopen(req, timeout=10)
 
 
+def get_updates(offset=None):
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates?timeout=30"
+    if offset is not None:
+        url += f"&offset={offset}"
+    req = urllib.request.Request(url)
+    resp = urllib.request.urlopen(req, timeout=35)
+    return json.loads(resp.read())
+
+
 # ── DynamoDB ──────────────────────────────────────────────────────────────────
 
 def register_user(chat_id, username):
@@ -40,18 +50,12 @@ def unregister_user(chat_id):
     table.delete_item(Key={"chat_id": str(chat_id)})
 
 def get_all_users():
-    result = table.scan()
-    return result.get("Items", [])
-
-def is_registered(chat_id):
-    resp = table.get_item(Key={"chat_id": str(chat_id)})
-    return "Item" in resp
+    return table.scan().get("Items", [])
 
 
 # ── 명령어 처리 ───────────────────────────────────────────────────────────────
 
 def handle_command(chat_id, username, cmd, full_text):
-    # 누구든 사용 가능
     if cmd == "/start":
         register_user(chat_id, username)
         send_message(chat_id,
@@ -78,7 +82,6 @@ def handle_command(chat_id, username, cmd, full_text):
             "/chatid - 내 Chat ID 확인\n"
             "/help  - 명령어 목록")
 
-    # 관리자 전용
     elif chat_id == ADMIN_CHAT_ID:
         handle_admin_command(chat_id, cmd, full_text)
 
@@ -90,12 +93,10 @@ def handle_admin_command(chat_id, cmd, full_text):
         if count == 0:
             send_message(chat_id, "등록된 사용자가 없습니다.")
             return
-
         lines = []
         for u in users[:30]:
             name = f"@{u['username']}" if u.get("username") else u["chat_id"]
             lines.append(f"• {name}")
-
         text = f"👥 등록된 사용자: {count}명\n\n" + "\n".join(lines)
         if count > 30:
             text += f"\n... 외 {count - 30}명"
@@ -106,12 +107,10 @@ def handle_admin_command(chat_id, cmd, full_text):
         if not msg:
             send_message(chat_id, "사용법: /broadcast 보낼내용")
             return
-
         users = get_all_users()
         if not users:
             send_message(chat_id, "등록된 사용자가 없습니다.")
             return
-
         success, fail = 0, 0
         for user in users:
             try:
@@ -119,40 +118,46 @@ def handle_admin_command(chat_id, cmd, full_text):
                 success += 1
             except Exception:
                 fail += 1
-
-        send_message(chat_id,
-            f"✅ 전송 완료\n성공: {success}명 / 실패: {fail}명")
+        send_message(chat_id, f"✅ 전송 완료\n성공: {success}명 / 실패: {fail}명")
 
     else:
         send_message(chat_id, "알 수 없는 관리자 명령어입니다.")
 
 
-# ── Lambda 핸들러 ─────────────────────────────────────────────────────────────
+# ── Polling 루프 ──────────────────────────────────────────────────────────────
 
-def lambda_handler(event, context):
+def main():
+    print("[Bot] 시작 (polling 방식)")
+
+    # 시작 시 쌓인 메시지 건너뜀
     try:
-        body = json.loads(event.get("body") or "{}")
+        result = get_updates(offset=-1).get("result", [])
+        offset = result[-1]["update_id"] + 1 if result else None
     except Exception:
-        return {"statusCode": 400, "body": "bad request"}
+        offset = None
 
-    message = body.get("message", {})
-    if not message:
-        return {"statusCode": 200, "body": "ok"}
+    while True:
+        try:
+            data = get_updates(offset)
+            for update in data.get("result", []):
+                offset = update["update_id"] + 1
+                message = update.get("message", {})
+                if not message or not message.get("text"):
+                    continue
+                chat_id = message["chat"]["id"]
+                username = message.get("from", {}).get("username", "")
+                text = message["text"].strip()
+                cmd = text.split()[0].lower()
+                if "@" in cmd:
+                    cmd = cmd[: cmd.index("@")]
+                try:
+                    handle_command(chat_id, username, cmd, text)
+                except Exception as e:
+                    print(f"[Error] handle_command: {e}")
+        except Exception as e:
+            print(f"[Error] poll: {e}")
+            time.sleep(5)
 
-    chat_id = message.get("chat", {}).get("id")
-    username = message.get("from", {}).get("username", "")
-    text = (message.get("text") or "").strip()
 
-    if not chat_id or not text:
-        return {"statusCode": 200, "body": "ok"}
-
-    cmd = text.split()[0].lower()
-    if "@" in cmd:
-        cmd = cmd[: cmd.index("@")]
-
-    try:
-        handle_command(chat_id, username, cmd, text)
-    except Exception as e:
-        print(f"[ERROR] {e}")
-
-    return {"statusCode": 200, "body": "ok"}
+if __name__ == "__main__":
+    main()
