@@ -325,24 +325,12 @@ namespace epicro.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string RailwayNotifyUrl {
+        public string TelegramChatIds {
             get {
-                return ((string)(this["RailwayNotifyUrl"]));
+                return ((string)(this["TelegramChatIds"]));
             }
             set {
-                this["RailwayNotifyUrl"] = value;
-            }
-        }
-
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string RailwayNotifyToken {
-            get {
-                return ((string)(this["RailwayNotifyToken"]));
-            }
-            set {
-                this["RailwayNotifyToken"] = value;
+                this["TelegramChatIds"] = value;
             }
         }
 

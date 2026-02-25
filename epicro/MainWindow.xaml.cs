@@ -191,8 +191,9 @@ namespace epicro
             */
             // 기존 실시간 송출 제거 → 대신 BackgroundCapture만 시작
 
-            // 텔레그램 봇 서비스 초기화 (Railway /notify 엔드포인트로 알림 전송)
-            _telegramBotService = new TelegramBotService();
+            // 텔레그램 봇 서비스 초기화
+            var chatIds = Properties.Settings.Default.TelegramChatIds;
+            _telegramBotService = new TelegramBotService(chatIds);
             _telegramBotService.IsEnabled = Properties.Settings.Default.TelegramEnabled;
         }
 
