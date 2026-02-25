@@ -17,8 +17,8 @@ namespace epicro.Helpers
 
         public TelegramBotService()
         {
-            _notifyUrl = Properties.Settings.Default.RailwayNotifyUrl?.Trim() ?? "";
-            _notifyToken = Properties.Settings.Default.RailwayNotifyToken?.Trim() ?? "";
+            _notifyUrl = TelegramConfig.NotifyUrl;
+            _notifyToken = TelegramConfig.NotifyToken;
         }
 
         public async Task BroadcastAsync(string message)

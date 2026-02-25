@@ -1,39 +1,25 @@
 <Window x:Class="epicro.TelegramSettingWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="텔레그램 연동" Height="280" Width="380"
+        Title="텔레그램 연동" Height="180" Width="320"
         ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
     <Grid Margin="12">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Label Content="Railway 알림 URL:" Grid.Row="0" Padding="0,0,0,2" FontWeight="SemiBold"/>
-        <TextBox x:Name="txt_Url" Grid.Row="1" Height="24" Margin="0,0,0,4"
-                 ToolTip="Railway 봇 서비스 URL (예: https://xxx.railway.app)"/>
-
-        <Label Content="인증 토큰 (NOTIFY_TOKEN):" Grid.Row="2" Padding="0,0,0,2" FontWeight="SemiBold"/>
-        <TextBox x:Name="txt_Token" Grid.Row="3" Height="24" Margin="0,0,0,4"
-                 ToolTip="Railway 환경변수 NOTIFY_TOKEN 값"/>
-
-        <TextBlock Grid.Row="4" Margin="0,0,0,6" Foreground="Gray" FontSize="10" TextWrapping="Wrap">
-            알림 등록: 텔레그램 봇에게 <Run FontWeight="Bold">/start</Run> 명령어를 보내면 자동으로 등록됩니다.
+        <TextBlock Grid.Row="0" Margin="0,0,0,8" Foreground="Gray" FontSize="10" TextWrapping="Wrap">
+            텔레그램 봇에게 <Run FontWeight="Bold">/start</Run> 명령어를 보내면 알림이 등록됩니다.
         </TextBlock>
 
-        <Button x:Name="btnToggle" Grid.Row="5" Height="28" Margin="0,0,0,6"
+        <Button x:Name="btnToggle" Grid.Row="1" Height="28" Margin="0,0,0,0"
                 Click="btnToggle_Click" FontWeight="SemiBold"/>
 
-        <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
             <Button x:Name="btnTest" Content="테스트 전송" Width="80" Margin="0,0,5,0" Click="btnTest_Click"/>
-            <Button x:Name="btnSave" Content="저장" Width="55" Margin="0,0,5,0" Click="btnSave_Click"/>
             <Button Content="닫기" Width="55" Click="btnClose_Click"/>
         </StackPanel>
     </Grid>
