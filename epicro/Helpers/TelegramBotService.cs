@@ -1,72 +1,57 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace epicro.Helpers
 {
-    // 알림 전송 전용 서비스 (명령어 처리는 Lambda 서버가 담당)
+    // Railway 봇 서버의 /notify 엔드포인트를 통해 텔레그램 알림 전송
     public class TelegramBotService : IDisposable
     {
-        private readonly string _botToken;
-        private readonly HashSet<long> _chatIds = new HashSet<long>();
+        private string _notifyUrl;
+        private string _notifyToken;
         private static readonly HttpClient _http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
 
-        public int RegisteredCount => _chatIds.Count;
         public bool IsEnabled { get; set; } = true;
 
-        public TelegramBotService(string savedChatIds, Action<string> log, Func<string> statusProvider)
+        public TelegramBotService()
         {
-            _botToken = TelegramConfig.BotToken;
-
-            if (!string.IsNullOrEmpty(savedChatIds))
-            {
-                foreach (var part in savedChatIds.Split(','))
-                {
-                    if (long.TryParse(part.Trim(), out long id))
-                        _chatIds.Add(id);
-                }
-            }
+            _notifyUrl = Properties.Settings.Default.RailwayNotifyUrl?.Trim() ?? "";
+            _notifyToken = Properties.Settings.Default.RailwayNotifyToken?.Trim() ?? "";
         }
 
         public async Task BroadcastAsync(string message)
         {
-            if (!IsEnabled || string.IsNullOrWhiteSpace(_botToken) || _chatIds.Count == 0) return;
-            var tasks = _chatIds.ToList().Select(id => SendAsync(id, message));
-            await Task.WhenAll(tasks);
-        }
+            if (!IsEnabled || string.IsNullOrWhiteSpace(_notifyUrl)) return;
 
-        public async Task SendAsync(long chatId, string message)
-        {
             try
             {
-                var url = $"https://api.telegram.org/bot{_botToken}/sendMessage";
-                var content = new FormUrlEncodedContent(new[]
-                {
-                    new KeyValuePair<string, string>("chat_id", chatId.ToString()),
-                    new KeyValuePair<string, string>("text", message)
-                });
-                await _http.PostAsync(url, content);
+                var url = _notifyUrl.TrimEnd('/') + "/notify";
+                var json = $"{{\"token\":{JsonString(_notifyToken)},\"message\":{JsonString(message)}}}";
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var resp = await _http.PostAsync(url, content);
+                if (!resp.IsSuccessStatusCode)
+                    Debug.WriteLine($"[Telegram] Notify 실패: {resp.StatusCode}");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[Telegram] Send error: {ex.Message}");
+                Debug.WriteLine($"[Telegram] Notify 오류: {ex.Message}");
             }
         }
 
-        public void UpdateChatIds(string commaSeparated)
+        public void UpdateConfig(string notifyUrl, string notifyToken)
         {
-            _chatIds.Clear();
-            if (!string.IsNullOrEmpty(commaSeparated))
-            {
-                foreach (var part in commaSeparated.Split(','))
-                {
-                    if (long.TryParse(part.Trim(), out long id))
-                        _chatIds.Add(id);
-                }
-            }
+            _notifyUrl = notifyUrl?.Trim() ?? "";
+            _notifyToken = notifyToken?.Trim() ?? "";
+        }
+
+        private static string JsonString(string s)
+        {
+            if (s == null) return "null";
+            var escaped = s.Replace("\\", "\\\\").Replace("\"", "\\\"")
+                           .Replace("\n", "\\n").Replace("\r", "\\r");
+            return $"\"{escaped}\"";
         }
 
         public void Dispose() { }

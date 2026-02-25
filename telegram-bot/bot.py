@@ -1,7 +1,9 @@
 import json
 import os
 import time
+import threading
 import urllib.request
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import psycopg2
 import psycopg2.extras
@@ -9,6 +11,8 @@ import psycopg2.extras
 BOT_TOKEN = os.environ["BOT_TOKEN"]
 ADMIN_CHAT_ID = int(os.environ["ADMIN_CHAT_ID"])
 DATABASE_URL = os.environ["DATABASE_URL"]
+NOTIFY_TOKEN = os.environ.get("NOTIFY_TOKEN", "")
+PORT = int(os.environ.get("PORT", 8080))
 
 
 # ── DB 초기화 ─────────────────────────────────────────────────────────────────
@@ -76,6 +80,72 @@ def get_updates(offset=None):
     resp = urllib.request.urlopen(req, timeout=35)
     return json.loads(resp.read())
 
+def broadcast(message):
+    users = get_all_users()
+    success, fail = 0, 0
+    for user in users:
+        try:
+            send_message(user["chat_id"], message)
+            success += 1
+        except Exception as e:
+            print(f"[Broadcast] Error → {user['chat_id']}: {e}")
+            fail += 1
+    return success, fail
+
+
+# ── HTTP 서버 (/notify 엔드포인트) ────────────────────────────────────────────
+
+class NotifyHandler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        if self.path != "/notify":
+            self._respond(404, b"Not Found")
+            return
+
+        length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(length)
+
+        try:
+            data = json.loads(body)
+        except Exception:
+            self._respond(400, b"Bad Request")
+            return
+
+        if NOTIFY_TOKEN and data.get("token") != NOTIFY_TOKEN:
+            self._respond(403, b"Unauthorized")
+            return
+
+        message = data.get("message", "").strip()
+        if not message:
+            self._respond(400, b"Empty message")
+            return
+
+        success, fail = broadcast(message)
+        result = json.dumps({"ok": True, "sent": success, "failed": fail}).encode()
+        self._respond(200, result, content_type="application/json")
+
+    def do_GET(self):
+        # Railway 헬스체크용
+        if self.path == "/health":
+            self._respond(200, b"ok")
+        else:
+            self._respond(404, b"Not Found")
+
+    def _respond(self, code, body, content_type="text/plain"):
+        self.send_response(code)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", len(body))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, format, *args):
+        pass  # access 로그 숨김
+
+
+def run_http_server():
+    server = HTTPServer(("0.0.0.0", PORT), NotifyHandler)
+    print(f"[HTTP] 시작 (port {PORT})")
+    server.serve_forever()
+
 
 # ── 명령어 처리 ───────────────────────────────────────────────────────────────
 
@@ -94,8 +164,7 @@ def handle_command(chat_id, username, cmd, full_text):
 
     elif cmd == "/chatid":
         send_message(chat_id,
-            f"내 Chat ID: `{chat_id}`\n\n"
-            f"에피크로 → 기타 탭 → 텔레그램 설정창에 입력하세요.",
+            f"내 Chat ID: `{chat_id}`",
             parse_mode="Markdown")
 
     elif cmd == "/help":
@@ -131,28 +200,17 @@ def handle_admin_command(chat_id, cmd, full_text):
         if not msg:
             send_message(chat_id, "사용법: /broadcast 보낼내용")
             return
-        users = get_all_users()
-        if not users:
-            send_message(chat_id, "등록된 사용자가 없습니다.")
-            return
-        success, fail = 0, 0
-        for user in users:
-            try:
-                send_message(user["chat_id"], f"📢 공지\n{msg}")
-                success += 1
-            except Exception:
-                fail += 1
+        success, fail = broadcast(msg)
         send_message(chat_id, f"✅ 전송 완료\n성공: {success}명 / 실패: {fail}명")
 
     else:
-        send_message(chat_id, "알 수 없는 관리자 명령어입니다.")
+        send_message(chat_id, "알 수 없는 명령어입니다.")
 
 
 # ── Polling 루프 ──────────────────────────────────────────────────────────────
 
-def main():
-    init_db()
-    print("[Bot] 시작 (polling)")
+def run_polling():
+    print("[Bot] Telegram polling 시작")
 
     # 시작 시 쌓인 메시지 건너뜀
     try:
@@ -182,6 +240,19 @@ def main():
         except Exception as e:
             print(f"[Error] poll: {e}")
             time.sleep(5)
+
+
+# ── 진입점 ────────────────────────────────────────────────────────────────────
+
+def main():
+    init_db()
+
+    # HTTP 서버를 별도 스레드에서 실행
+    t = threading.Thread(target=run_http_server, daemon=True)
+    t.start()
+
+    # Telegram polling (메인 스레드)
+    run_polling()
 
 
 if __name__ == "__main__":

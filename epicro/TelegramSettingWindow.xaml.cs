@@ -12,7 +12,8 @@ namespace epicro
         {
             InitializeComponent();
             _botService = botService;
-            txt_ChatId.Text = Properties.Settings.Default.TelegramChatIds;
+            txt_Url.Text = Properties.Settings.Default.RailwayNotifyUrl;
+            txt_Token.Text = Properties.Settings.Default.RailwayNotifyToken;
             RefreshToggleButton();
         }
 
@@ -42,24 +43,26 @@ namespace epicro
 
         private void btnSave_Click(object sender, RoutedEventArgs e)
         {
-            var input = txt_ChatId.Text.Trim();
-            Properties.Settings.Default.TelegramChatIds = input;
+            var url = txt_Url.Text.Trim();
+            var token = txt_Token.Text.Trim();
+            Properties.Settings.Default.RailwayNotifyUrl = url;
+            Properties.Settings.Default.RailwayNotifyToken = token;
             Properties.Settings.Default.Save();
-            _botService?.UpdateChatIds(input);
+            _botService?.UpdateConfig(url, token);
             MessageBox.Show("저장되었습니다.", "완료");
         }
 
         private async void btnTest_Click(object sender, RoutedEventArgs e)
         {
-            var input = txt_ChatId.Text.Trim();
-            if (string.IsNullOrEmpty(input))
+            var url = txt_Url.Text.Trim();
+            if (string.IsNullOrEmpty(url))
             {
-                MessageBox.Show("Chat ID를 먼저 입력하고 저장하세요.", "알림");
+                MessageBox.Show("Railway URL을 먼저 입력하고 저장하세요.", "알림");
                 return;
             }
 
             btnTest.IsEnabled = false;
-            _botService?.UpdateChatIds(input);
+            _botService?.UpdateConfig(url, txt_Token.Text.Trim());
             await _botService?.BroadcastAsync("🔔 epicro 테스트 메시지입니다.");
             btnTest.IsEnabled = true;
             MessageBox.Show("테스트 메시지를 전송했습니다.", "완료");
