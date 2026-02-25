@@ -7,17 +7,17 @@ using System.Threading.Tasks;
 
 namespace epicro.Helpers
 {
-    // 알림 전송 전용 서비스 (명령어 처리는 Lambda 서버가 담당)
+    // Telegram API에 직접 알림 전송 (등록된 Chat ID 목록 사용)
     public class TelegramBotService : IDisposable
     {
         private readonly string _botToken;
         private readonly HashSet<long> _chatIds = new HashSet<long>();
         private static readonly HttpClient _http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
 
-        public int RegisteredCount => _chatIds.Count;
         public bool IsEnabled { get; set; } = true;
+        public int RegisteredCount => _chatIds.Count;
 
-        public TelegramBotService(string savedChatIds, Action<string> log, Func<string> statusProvider)
+        public TelegramBotService(string savedChatIds)
         {
             _botToken = TelegramConfig.BotToken;
 

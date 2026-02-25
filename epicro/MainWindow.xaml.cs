@@ -191,9 +191,9 @@ namespace epicro
             */
             // 기존 실시간 송출 제거 → 대신 BackgroundCapture만 시작
 
-            // 텔레그램 봇 서비스 초기화 (알림 전송 전용 - 명령어 처리는 Lambda 서버)
+            // 텔레그램 봇 서비스 초기화
             var chatIds = Properties.Settings.Default.TelegramChatIds;
-            _telegramBotService = new TelegramBotService(chatIds, AppendLog, GetStatusText);
+            _telegramBotService = new TelegramBotService(chatIds);
             _telegramBotService.IsEnabled = Properties.Settings.Default.TelegramEnabled;
         }
 

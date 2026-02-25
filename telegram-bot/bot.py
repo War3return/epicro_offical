@@ -83,9 +83,9 @@ def handle_command(chat_id, username, cmd, full_text):
     if cmd == "/start":
         register_user(chat_id, username)
         send_message(chat_id,
-            f"✅ 알림이 등록되었습니다!\n\n"
+            f"✅ 등록되었습니다!\n\n"
             f"내 Chat ID: `{chat_id}`\n\n"
-            f"에피크로 → 기타 탭 → 텔레그램 설정창에 이 번호를 입력하세요.",
+            f"이 번호를 에피크로 → 기타 탭 → 텔레그램 설정에 입력하세요.",
             parse_mode="Markdown")
 
     elif cmd == "/stop":
@@ -95,14 +95,14 @@ def handle_command(chat_id, username, cmd, full_text):
     elif cmd == "/chatid":
         send_message(chat_id,
             f"내 Chat ID: `{chat_id}`\n\n"
-            f"에피크로 → 기타 탭 → 텔레그램 설정창에 입력하세요.",
+            f"에피크로 → 기타 탭 → 텔레그램 설정에 입력하세요.",
             parse_mode="Markdown")
 
     elif cmd == "/help":
         send_message(chat_id,
             "📋 명령어 목록\n"
-            "/start  - 알림 등록\n"
-            "/stop   - 알림 해제\n"
+            "/start  - 등록 및 Chat ID 확인\n"
+            "/stop   - 등록 해제\n"
             "/chatid - 내 Chat ID 확인\n"
             "/help   - 명령어 목록")
 
@@ -120,7 +120,7 @@ def handle_admin_command(chat_id, cmd, full_text):
         lines = []
         for u in users[:30]:
             name = f"@{u['username']}" if u["username"] else str(u["chat_id"])
-            lines.append(f"• {name}")
+            lines.append(f"• {name} ({u['chat_id']})")
         text = f"👥 등록된 사용자: {count}명\n\n" + "\n".join(lines)
         if count > 30:
             text += f"\n... 외 {count - 30}명"
@@ -132,9 +132,6 @@ def handle_admin_command(chat_id, cmd, full_text):
             send_message(chat_id, "사용법: /broadcast 보낼내용")
             return
         users = get_all_users()
-        if not users:
-            send_message(chat_id, "등록된 사용자가 없습니다.")
-            return
         success, fail = 0, 0
         for user in users:
             try:
@@ -145,7 +142,7 @@ def handle_admin_command(chat_id, cmd, full_text):
         send_message(chat_id, f"✅ 전송 완료\n성공: {success}명 / 실패: {fail}명")
 
     else:
-        send_message(chat_id, "알 수 없는 관리자 명령어입니다.")
+        send_message(chat_id, "알 수 없는 명령어입니다.")
 
 
 # ── Polling 루프 ──────────────────────────────────────────────────────────────
@@ -154,7 +151,6 @@ def main():
     init_db()
     print("[Bot] 시작 (polling)")
 
-    # 시작 시 쌓인 메시지 건너뜀
     try:
         result = get_updates(offset=-1).get("result", [])
         offset = result[-1]["update_id"] + 1 if result else None
